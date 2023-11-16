@@ -1,0 +1,26 @@
+{
+  "name": "@sage-calendar-integration/root",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "prepare": "husky install"
+  },
+  "devDependencies": {
+    "turbo": "1.10.6"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "husky": "^8.0.3"
+  },
+  "packageManager": "yarn@1.22.19"
+}
