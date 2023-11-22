@@ -1,6 +1,12 @@
+export interface CalendarServiceConfig {
+  calendarId: string;
+  clientEmail: string;
+  accountPrivateKey: string;
+  subjectEmail: string;
+}
 interface EventDateTime {
   dateTime: string;
-  timeZone: string;
+  timeZone?: string;
 }
 
 interface EventAttendee {
@@ -15,7 +21,7 @@ interface EventReminderOverride {
 
 interface EventReminder {
   useDefault: boolean;
-  overrides: EventReminderOverride[];
+  overrides?: EventReminderOverride[];
 }
 
 export interface EventUpsertData {
@@ -24,8 +30,8 @@ export interface EventUpsertData {
   description?: string;
   start?: EventDateTime;
   end?: EventDateTime;
-  attendees?: EventAttendee[];
-  reminders?: EventReminder;
+  attendees: EventAttendee[];
+  reminders: EventReminder;
 }
 
 interface EventOrganizer {

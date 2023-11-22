@@ -1,58 +1,69 @@
 import { google } from 'googleapis';
-import { readFileSync } from 'fs';
 import {
   CalendarEventResponse,
+  CalendarServiceConfig,
   EventUpsertData,
 } from './CalendarServiceInterfaces';
 
 export default class CalendarService {
   private readonly calendar;
 
-  constructor() {
-    const serviceAccount = JSON.parse(
-      readFileSync('src/calendar/service-account.json', 'utf8'),
-    );
+  private readonly calendarId: string;
 
-    const jwtClient = new google.auth.JWT(
-      serviceAccount.client_email,
-      null,
-      serviceAccount.private_key,
-      ['https://www.googleapis.com/auth/calendar'],
-      'darce@litebox.ai',
-    );
-
-    this.calendar = google.calendar({ version: 'v3', auth: jwtClient });
+  constructor({
+    calendarId,
+    clientEmail,
+    accountPrivateKey,
+    subjectEmail,
+  }: CalendarServiceConfig) {
+    this.calendarId = calendarId;
+    try {
+      const jwtClient = new google.auth.JWT(
+        clientEmail,
+        null,
+        accountPrivateKey,
+        ['https://www.googleapis.com/auth/calendar'],
+        subjectEmail,
+      );
+      this.calendar = google.calendar({ version: 'v3', auth: jwtClient });
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  async getEvents(calendarId: string): Promise<CalendarEventResponse[]> {
-    const response = await this.calendar.events.list({
-      calendarId,
-      timeMin: new Date().toISOString(),
-      maxResults: 10,
-      singleEvents: true,
-      orderBy: 'startTime',
-    });
-    return response.data.items;
+  async getEvents(): Promise<CalendarEventResponse[]> {
+    try {
+      const response = await this.calendar.events.list({
+        calendarId: this.calendarId,
+        timeMin: new Date().toISOString(),
+        maxResults: 10,
+        singleEvents: true,
+        orderBy: 'startTime',
+      });
+      return response.data.items;
+    } catch (error) {
+      console.log(error);
+    }
+    return null;
   }
 
-  async getEvent(
-    calendarId: string,
-    eventId: string,
-  ): Promise<CalendarEventResponse> {
-    const response = await this.calendar.events.list({
-      calendarId,
-      iCalUID: `${eventId}@google.com`,
-    });
-    return response.data.items[0];
+  async getEvent(eventId: string): Promise<CalendarEventResponse> {
+    try {
+      const response = await this.calendar.events.get({
+        calendarId: this.calendarId,
+        eventId,
+      });
+      return response.data;
+    } catch (error) {
+      console.log('Error fetching event:', error);
+      throw error;
+    }
   }
 
-  async createEvent(
-    calendarId: string,
-    event: EventUpsertData,
-  ): Promise<CalendarEventResponse> {
+  async createEvent(event: EventUpsertData): Promise<CalendarEventResponse> {
     try {
       const response = await this.calendar.events.insert({
-        calendarId,
+        calendarId: this.calendarId,
         requestBody: event,
         sendUpdates: 'all',
       });
@@ -64,13 +75,12 @@ export default class CalendarService {
   }
 
   async updateEvent(
-    calendarId: string,
     eventId: string,
     updatedEvent: EventUpsertData,
   ): Promise<CalendarEventResponse> {
     try {
       const response = await this.calendar.events.update({
-        calendarId,
+        calendarId: this.calendarId,
         eventId,
         requestBody: updatedEvent,
       });
@@ -81,10 +91,10 @@ export default class CalendarService {
     }
   }
 
-  async deleteEvent(calendarId: string, eventId: string): Promise<any> {
+  async deleteEvent(eventId: string): Promise<any> {
     try {
       await this.calendar.events.delete({
-        calendarId,
+        calendarId: this.calendarId,
         eventId,
       });
       return { success: true };
