@@ -24,7 +24,16 @@ interface EventReminder {
   overrides?: EventReminderOverride[];
 }
 
+interface OutOfOfficeProp {
+  autoDeclineMode: string;
+  declineMessage?: string;
+}
+
 export interface EventUpsertData {
+  transparency?: string;
+  visibility?: string;
+  eventType?: string;
+  outOfOfficeProperties?: OutOfOfficeProp;
   summary?: string;
   location?: string;
   description?: string;

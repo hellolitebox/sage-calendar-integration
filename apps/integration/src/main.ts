@@ -4,12 +4,22 @@ import 'dotenv/config';
 
 import { CalendarService } from './calendar';
 import { SageService } from './sage';
+
+import { AppDataSource } from './database/AppDataSource';
 import { syncSageWithCalendar } from './integration/ServicesIntegration';
 
 const app = express();
 const port = 3000;
 
 app.use(express.json());
+
+AppDataSource.initialize()
+  .then(() => {
+    console.log('Data Source has been initialized!');
+  })
+  .catch((err) => {
+    console.error('Error during Data Source initialization', err);
+  });
 
 const sageService = new SageService({
   sageDomain: 'https://litebox.sage.hr',
@@ -33,11 +43,13 @@ const calendarService = new CalendarService({
   subjectEmail: 'darce@litebox.ai',
 });
 
-// cron.schedule('*/2 * * * *', async () => {
-//   const data = await sageService.fetchLeaveRequests('2023-11-17', '2023-12-31');
-//   console.log('⏲️ Fetching data from Sage service');
-//   console.log(JSON.stringify(data, undefined, 2));
-// });
+cron.schedule('*/2 * * * *', async () => {
+  console.log('🏁 Starting sync...');
+
+  await syncSageWithCalendar();
+
+  console.log('🛑 Sync is finished');
+});
 
 app.get('/sage-service/leave-requests', async (req, res) => {
   try {
