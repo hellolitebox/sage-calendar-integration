@@ -72,3 +72,11 @@ export interface CalendarEventResponse {
   reminders: EventReminder;
   eventType: string;
 }
+
+export interface GetEventsParams {
+  calendarId: string;
+  singleEvents: boolean;
+  orderBy: string;
+  timeMin?: string;
+  timeMax?: string;
+}

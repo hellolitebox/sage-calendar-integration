@@ -11,15 +11,9 @@ export class LeaveRequestCalendarEvent {
   @Column()
   calendarEventId: string;
 
-  @Column()
-  startDate: string;
+  @Column('timestamp with time zone')
+  startDateTime: Date;
 
-  @Column()
-  endDate: string;
-
-  @Column({ nullable: true })
-  startTime: string | null;
-
-  @Column({ nullable: true })
-  endTime: string | null;
+  @Column('timestamp with time zone')
+  endDateTime: Date;
 }

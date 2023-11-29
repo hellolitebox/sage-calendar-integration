@@ -3,6 +3,7 @@ import {
   CalendarEventResponse,
   CalendarServiceConfig,
   EventUpsertData,
+  GetEventsParams,
 } from './CalendarServiceInterfaces';
 
 export default class CalendarService {
@@ -31,20 +32,42 @@ export default class CalendarService {
     }
   }
 
-  async getEvents(): Promise<CalendarEventResponse[]> {
+  async getCalendarById(calendarId: string) {
     try {
-      const response = await this.calendar.events.list({
+      const response = await this.calendar.calendars.get({
+        calendarId,
+      });
+      return response.data;
+    } catch (error) {
+      console.log(`Error fetching calendar with ID ${calendarId}:`, error);
+      return null;
+    }
+  }
+
+  async getEvents(
+    fromDate?: string,
+    toDate?: string,
+  ): Promise<CalendarEventResponse[]> {
+    try {
+      const params: GetEventsParams = {
         calendarId: this.calendarId,
-        timeMin: new Date().toISOString(),
-        maxResults: 10,
         singleEvents: true,
         orderBy: 'startTime',
-      });
+      };
+
+      if (fromDate) {
+        params.timeMin = new Date(fromDate).toISOString();
+      }
+      if (toDate) {
+        params.timeMax = new Date(toDate).toISOString();
+      }
+
+      const response = await this.calendar.events.list(params);
       return response.data.items;
     } catch (error) {
-      console.log(error);
+      console.log('Error fetching events:', error);
+      return [];
     }
-    return null;
   }
 
   async getEvent(eventId: string): Promise<CalendarEventResponse> {

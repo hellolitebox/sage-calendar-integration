@@ -1,21 +1,21 @@
 import { LeaveRequest } from 'src/sage/SageServiceInterfaces';
 import { EventUpsertData } from 'src/calendar/CalendarServiceInterfaces';
+import { LeaveRequestCalendarEvent } from '../database/entities/LeaveRequestCalendarEventEntity';
+import { findTimeZoneByCountryCode } from '../tz-locales';
 import {
+  deleteLeaveRequestCalendarEvent,
   findLeaveRequestCalendarEventBySageId,
+  findLeaveRequestCalendarEventsBySageIds,
   insertLeaveRequestCalendarEvent,
   updateLeaveRequestCalendarEvent,
 } from '../database/entities/LeaveRequestCalendarEventDataSource';
 import { CalendarService } from '../calendar';
 import { SageService } from '../sage';
 
-const TEST_ACCOUNTS = ['darce@litebox.ai', 'fmenendez@litebox.ai'];
-
 const sageService = new SageService({
-  sageDomain: 'https://litebox.sage.hr',
+  sageDomain: process.env.SAGE_DOMAIN,
   sageApiKey: process.env.SAGE_API_KEY,
 });
-const calendarId =
-  'c_afbd821650afdc9c26bcf37531bc49e9da3c141b1c093d72ab10c558d77ff963@group.calendar.google.com';
 
 // load the environment variable with keys
 const keysEnvVar = process.env.GOOGLE_CALENDAR_CREDENTIALS;
@@ -24,43 +24,88 @@ if (!keysEnvVar) {
     'The $GOOGLE_CALENDAR_CREDENTIALS environment variable was not found!',
   );
 }
+
 const keys = JSON.parse(keysEnvVar);
 const calendarService = new CalendarService({
-  calendarId,
+  calendarId: process.env.GOOGLE_CALENDAR_ID,
   accountPrivateKey: keys.private_key,
   clientEmail: keys.client_email,
-  subjectEmail: 'darce@litebox.ai',
+  subjectEmail: process.env.GOOGLE_CALENDAR_SUBJECT_EMAIL,
 });
 
-async function getApprovedLeaveRequests(fromDate, toDate) {
-  const leaveRequests = await sageService.fetchLeaveRequests(fromDate, toDate);
+function getTestUsers(): number[] {
+  return process.env.TEST_USERS
+    ? process.env.TEST_USERS.split(',').map(Number)
+    : [];
+}
+
+async function getApprovedLeaveRequests(leaveRequests: LeaveRequest[]) {
+  const testUsers = getTestUsers();
   return leaveRequests.filter(
     (leaveRequest) =>
       leaveRequest.statusCode === 'approved' &&
-      TEST_ACCOUNTS.includes(leaveRequest.employee.email),
+      process.env.ENABLE_TEST_USERS_ALL === 'true' &&
+      testUsers.includes(leaveRequest.employee.id),
+  );
+}
+
+async function getCancelledLeaveRequests(leaveRequests: LeaveRequest[]) {
+  const testUsers = getTestUsers();
+  return leaveRequests.filter(
+    (leaveRequest) =>
+      (leaveRequest.statusCode === 'canceled' ||
+        leaveRequest.statusCode === 'declined') &&
+      process.env.ENABLE_TEST_USERS_ALL === 'true' &&
+      testUsers.includes(leaveRequest.employee.id),
+  );
+}
+
+async function deleteObsoleteLeaveRequestCalendarEvent(
+  obsoleteLeaveRequestCalendarEvent: LeaveRequestCalendarEvent[],
+) {
+  await Promise.all(
+    obsoleteLeaveRequestCalendarEvent.map(
+      async (event: LeaveRequestCalendarEvent) => {
+        try {
+          await calendarService.deleteEvent(event.calendarEventId);
+          await deleteLeaveRequestCalendarEvent(event.id);
+          console.log(
+            `❌ Event Calendar removed for cancelled leave request id: ${event.sageLeaveRequestId}`,
+          );
+        } catch (error) {
+          console.error('Error deleting calendar event:', error);
+        }
+      },
+    ),
   );
 }
 
 function createEventUpsertDataFromLeaveRequest(
   leaveRequest: LeaveRequest,
 ): EventUpsertData {
+  const timeZone = findTimeZoneByCountryCode(leaveRequest.employee.country);
+
   let start;
   let end;
 
   if (leaveRequest.startTime && leaveRequest.endTime) {
     start = {
       dateTime: `${leaveRequest.startDate}T${leaveRequest.startTime}:00`,
+      timeZone,
     };
-    end = { dateTime: `${leaveRequest.endDate}T${leaveRequest.endTime}:00` };
+    end = {
+      dateTime: `${leaveRequest.endDate}T${leaveRequest.endTime}:00`,
+      timeZone,
+    };
   } else {
-    start = { date: leaveRequest.startDate };
-    end = { date: leaveRequest.endDate };
+    start = { date: leaveRequest.startDate, timeZone };
+    end = { date: leaveRequest.endDate, timeZone };
   }
 
   const eventData: EventUpsertData = {
     visibility: 'public',
     transparency: 'opaque', // indicates that attendee will appear as busy
-    summary: `${leaveRequest.employee.lastName} ${leaveRequest.employee.firstName}: ${leaveRequest.policy?.name}`,
+    summary: `${leaveRequest.employee.firstName} ${leaveRequest.employee.lastName}: ${leaveRequest.policy?.name}`,
     description: leaveRequest.details,
     attendees: [
       { email: leaveRequest.employee.email, responseStatus: 'accepted' },
@@ -73,7 +118,7 @@ function createEventUpsertDataFromLeaveRequest(
   return eventData;
 }
 
-async function createCalendarEvent(leaveRequest) {
+async function createCalendarEvent(leaveRequest: LeaveRequest) {
   try {
     const leaveCalendarEventData =
       createEventUpsertDataFromLeaveRequest(leaveRequest);
@@ -81,46 +126,92 @@ async function createCalendarEvent(leaveRequest) {
       leaveCalendarEventData,
     );
 
+    const startDateTime = leaveRequest.startTime
+      ? new Date(`${leaveRequest.startDate}T${leaveRequest.startTime}`)
+      : new Date(leaveRequest.startDate);
+
+    const endDateTime = leaveRequest.endTime
+      ? new Date(`${leaveRequest.endDate}T${leaveRequest.endTime}`)
+      : new Date(leaveRequest.endDate);
+
     await insertLeaveRequestCalendarEvent({
       sageLeaveRequestId: leaveRequest.id,
       calendarEventId: calendarEvent.id,
-      startDate: leaveRequest.startDate,
-      endDate: leaveRequest.endDate,
-      startTime: leaveRequest.startTime,
-      endTime: leaveRequest.endTime,
+      startDateTime,
+      endDateTime,
     });
 
-    console.log(`📅 Calendar Event Created: ${calendarEvent.summary}`);
+    console.log(`✅ Calendar Event Created: ${calendarEvent.summary}`);
   } catch (error) {
     console.error('Error creating calendar event:', error);
   }
 }
 
-async function updateCalendarEvent(leaveRequest, leaveRequestCalendarEvent) {
-  await calendarService.deleteEvent(leaveRequestCalendarEvent.calendarEventId);
+async function updateCalendarEvent(
+  leaveRequest: LeaveRequest,
+  leaveRequestCalendarEvent: LeaveRequestCalendarEvent,
+) {
+  try {
+    await calendarService.deleteEvent(
+      leaveRequestCalendarEvent.calendarEventId,
+    );
 
-  const leaveCalendarEventData =
-    createEventUpsertDataFromLeaveRequest(leaveRequest);
-  const calendarEvent = await calendarService.createEvent(
-    leaveCalendarEventData,
-  );
+    const leaveCalendarEventData =
+      createEventUpsertDataFromLeaveRequest(leaveRequest);
+    const calendarEvent = await calendarService.createEvent(
+      leaveCalendarEventData,
+    );
 
-  updateLeaveRequestCalendarEvent(leaveRequestCalendarEvent.id, {
-    sageLeaveRequestId: leaveRequest.id,
-    calendarEventId: calendarEvent.id,
-    startDate: leaveRequest.startDate,
-    endDate: leaveRequest.endDate,
-    startTime: leaveRequest.startTime,
-    endTime: leaveRequest.endTime,
-  });
+    const startDateTime = leaveRequest.startTime
+      ? new Date(`${leaveRequest.startDate}T${leaveRequest.startTime}`)
+      : new Date(leaveRequest.startDate);
+
+    const endDateTime = leaveRequest.endTime
+      ? new Date(`${leaveRequest.endDate}T${leaveRequest.endTime}`)
+      : new Date(leaveRequest.endDate);
+
+    updateLeaveRequestCalendarEvent(leaveRequestCalendarEvent.id, {
+      sageLeaveRequestId: leaveRequest.id,
+      calendarEventId: calendarEvent.id,
+      startDateTime,
+      endDateTime,
+    });
+    console.log(`🔁 Calendar Event updated: ${calendarEvent.summary}`);
+  } catch (error) {
+    console.error('Error updating calendar event:', error);
+  }
 }
 
-function shouldUpdateCalendarEvent(leaveRequest, leaveRequestCalendarEvent) {
+function areDateTimesEqual(dateTime1: Date, dateTimeAsString: string) {
+  const dateTime2 = new Date(dateTimeAsString);
+
   return (
-    leaveRequestCalendarEvent.startDate !== leaveRequest.startDate ||
-    leaveRequestCalendarEvent.endDate !== leaveRequest.endDate ||
-    leaveRequestCalendarEvent.startTime !== leaveRequest.startTime ||
-    leaveRequestCalendarEvent.endTime !== leaveRequest.endTime
+    dateTime1.getFullYear() === dateTime2.getFullYear() &&
+    dateTime1.getMonth() === dateTime2.getMonth() &&
+    dateTime1.getDate() === dateTime2.getDate() &&
+    dateTime1.getHours() === dateTime2.getHours() &&
+    dateTime1.getMinutes() === dateTime2.getMinutes()
+  );
+}
+
+function shouldUpdateCalendarEvent(
+  leaveRequest: LeaveRequest,
+  leaveRequestCalendarEvent: LeaveRequestCalendarEvent,
+) {
+  const startDateTimeStr = leaveRequest.startTime
+    ? `${leaveRequest.startDate}T${leaveRequest.startTime}`
+    : leaveRequest.startDate;
+
+  const endDateTimeStr = leaveRequest.endTime
+    ? `${leaveRequest.endDate}T${leaveRequest.endTime}`
+    : leaveRequest.endDate;
+
+  return (
+    !areDateTimesEqual(
+      leaveRequestCalendarEvent.startDateTime,
+      startDateTimeStr,
+    ) ||
+    !areDateTimesEqual(leaveRequestCalendarEvent.endDateTime, endDateTimeStr)
   );
 }
 
@@ -139,7 +230,7 @@ async function createOrUpdateCalendarEvents(leaveRequests: LeaveRequest[]) {
         await updateCalendarEvent(leaveRequest, leaveRequestCalendarEvent);
       } else {
         console.log(
-          `✅ Event Calendar already exists for leave request: ${leaveRequest.employee.lastName} ${leaveRequest.employee.firstName}: ${leaveRequest.policy?.name}`,
+          `📅 Event Calendar already exists for leave request: ${leaveRequest.employee.lastName} ${leaveRequest.employee.firstName}: ${leaveRequest.policy?.name}`,
         );
       }
     }),
@@ -155,11 +246,29 @@ const syncSageWithCalendar = async () => {
   const formattedFromDate = fromDate.toISOString().split('T')[0];
   const formattedToDate = toDate.toISOString().split('T')[0];
 
-  const approvedLeaveRequests = await getApprovedLeaveRequests(
+  const allLeaveRequests = await sageService.fetchLeaveRequests(
     formattedFromDate,
     formattedToDate,
   );
+  const approvedLeaveRequests = await getApprovedLeaveRequests(
+    allLeaveRequests,
+  );
+
   await createOrUpdateCalendarEvents(approvedLeaveRequests);
+
+  const cancelledLeaveRequests = await getCancelledLeaveRequests(
+    allLeaveRequests,
+  );
+
+  const cancelledLeaveRequestIds = cancelledLeaveRequests.map(
+    (cancelledLeaveRequest: LeaveRequest) => cancelledLeaveRequest.id,
+  );
+
+  const obsoleteEvents = await findLeaveRequestCalendarEventsBySageIds(
+    cancelledLeaveRequestIds,
+  );
+
+  await deleteObsoleteLeaveRequestCalendarEvent(obsoleteEvents);
 };
 
 export { syncSageWithCalendar };

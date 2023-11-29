@@ -1,13 +1,12 @@
+import { In, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
 import { AppDataSource } from '../AppDataSource';
 import { LeaveRequestCalendarEvent } from './LeaveRequestCalendarEventEntity';
 
 export interface LeaveRequestCalendarEventData {
   sageLeaveRequestId: number;
   calendarEventId: string;
-  startDate: string;
-  endDate: string;
-  startTime: string;
-  endTime: string;
+  startDateTime: Date;
+  endDateTime: Date;
 }
 
 export async function insertLeaveRequestCalendarEvent(
@@ -25,6 +24,21 @@ export async function getLeaveRequestCalendarEvents() {
     LeaveRequestCalendarEvent,
   );
   return eventRepository.find();
+}
+
+export async function findLeaveRequestCalendarEventsByDateRange(
+  fromDate: Date,
+  toDate: Date,
+) {
+  const eventRepository = AppDataSource.getRepository(
+    LeaveRequestCalendarEvent,
+  );
+  return eventRepository.find({
+    where: {
+      startDateTime: MoreThanOrEqual(fromDate),
+      endDateTime: LessThanOrEqual(toDate),
+    },
+  });
 }
 
 export async function updateLeaveRequestCalendarEvent(
@@ -58,4 +72,15 @@ export async function findLeaveRequestCalendarEventBySageId(
     LeaveRequestCalendarEvent,
   );
   return eventRepository.findBy({ sageLeaveRequestId });
+}
+
+export async function findLeaveRequestCalendarEventsBySageIds(
+  sageLeaveRequestIds: number[],
+) {
+  const eventRepository = AppDataSource.getRepository(
+    LeaveRequestCalendarEvent,
+  );
+  return eventRepository.findBy({
+    sageLeaveRequestId: In(sageLeaveRequestIds),
+  });
 }
