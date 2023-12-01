@@ -18,7 +18,11 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prelint": "tsc --noEmit",
     "prelint:fix": "tsc --noEmit && prettier --write .",
-    "lint:fix": "eslint --fix ."
+    "lint:fix": "eslint --fix .",
+    "typeorm": "typeorm-ts-node-esm",
+    "migration:generate": "ts-node ./node_modules/typeorm/cli.js migration:generate -d ./src/database/AppDataSource.ts ./src/database/migration/$npm_config_name",
+    "migration:create": "ts-node ./node_modules/typeorm/cli.js migration:create ./src/database/migration/$npm_config_name",
+    "migration:run": "ts-node ./node_modules/typeorm/cli.js migration:run -d ./src/database/AppDataSource.ts"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
@@ -32,8 +36,7 @@
     "node-cron": "^3.0.3",
     "pg": "^8.11.3",
     "reflect-metadata": "^0.1.13",
-    "rxjs": "^7.8.1",
-    "typeorm": "^0.3.17"
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
@@ -51,6 +54,7 @@
     "ts-loader": "^9.4.3",
     "ts-node": "^10.9.1",
     "tsconfig-paths": "^4.2.0",
+    "typeorm": "^0.3.17",
     "typescript": "^5.1.3"
   },
   "jest": {

@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import { LeaveRequestCalendarEvent } from './entities/LeaveRequestCalendarEventEntity';
 
@@ -7,7 +8,9 @@ export const AppDataSource = new DataSource({
   port: Number(process.env.POSTGRES_PORT) || 5432,
   username: process.env.POSTGRES_USER_NAME,
   password: process.env.POSTGRES_PASSWORD,
-  database: 'sage_calendar_integration',
+  database: process.env.POSTGRES_DATA_BASE,
   entities: [LeaveRequestCalendarEvent],
-  synchronize: true,
+  synchronize: false,
+  migrations: ['src/database/migration/**/*.ts'],
+  migrationsTableName: 'migrations',
 });

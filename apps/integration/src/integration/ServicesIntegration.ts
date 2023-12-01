@@ -39,25 +39,31 @@ function getTestUsers(): number[] {
     : [];
 }
 
+async function getFilteredLeaveRequests(
+  leaveRequests: LeaveRequest[],
+  statusCode: string,
+  filterTestUsers = false,
+) {
+  const testUsers = filterTestUsers ? getTestUsers() : null;
+
+  return leaveRequests.filter((leaveRequest) => {
+    const isStatusMatch = leaveRequest.statusCode === statusCode;
+    const isTestUser = filterTestUsers
+      ? testUsers.includes(leaveRequest.employee.id)
+      : true;
+
+    return isStatusMatch && isTestUser;
+  });
+}
+
 async function getApprovedLeaveRequests(leaveRequests: LeaveRequest[]) {
-  const testUsers = getTestUsers();
-  return leaveRequests.filter(
-    (leaveRequest) =>
-      leaveRequest.statusCode === 'approved' &&
-      process.env.ENABLE_TEST_USERS_ALL === 'true' &&
-      testUsers.includes(leaveRequest.employee.id),
-  );
+  const filterTestUsers = process.env.ENABLE_TEST_USERS_ALL === 'true';
+  return getFilteredLeaveRequests(leaveRequests, 'approved', filterTestUsers);
 }
 
 async function getCancelledLeaveRequests(leaveRequests: LeaveRequest[]) {
-  const testUsers = getTestUsers();
-  return leaveRequests.filter(
-    (leaveRequest) =>
-      (leaveRequest.statusCode === 'canceled' ||
-        leaveRequest.statusCode === 'declined') &&
-      process.env.ENABLE_TEST_USERS_ALL === 'true' &&
-      testUsers.includes(leaveRequest.employee.id),
-  );
+  const filterTestUsers = process.env.ENABLE_TEST_USERS_ALL === 'true';
+  return getFilteredLeaveRequests(leaveRequests, 'canceled', filterTestUsers);
 }
 
 async function deleteObsoleteLeaveRequestCalendarEvent(

@@ -15,13 +15,11 @@ AppDataSource.initialize()
 cron.schedule(
   process.env.SYNC_SAGE_CALENDAR_CRON_SCHEDULE,
   async () => {
-    console.log();
-    console.log(`🏁 Starting sync at ${new Date().toLocaleString()}...`);
+    console.log(`\n🏁 Starting sync at ${new Date().toLocaleString()}...`);
 
     await syncSageWithCalendar();
 
-    console.log(`🛑 Sync is finished at ${new Date().toLocaleString()}`);
-    console.log();
+    console.log(`🛑 Sync is finished at ${new Date().toLocaleString()}\n`);
   },
   {
     name: 'sage calendar sync',
