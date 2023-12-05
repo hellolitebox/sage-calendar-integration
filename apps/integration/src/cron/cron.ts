@@ -1,18 +1,19 @@
 import * as cron from 'node-cron';
-import * as express from 'express';
-import { SageService } from 'src/sage/SageService';
 
-const app: express.Express = express();
+import { syncSageWithCalendar } from 'src/integration/ServicesIntegration';
 
-const sageService = new SageService('https://litebox.sage.hr');
+export const InitCron = () => {
+  cron.schedule(
+    process.env.SYNC_SAGE_CALENDAR_CRON_SCHEDULE,
+    async () => {
+      console.log(`\n🏁 Starting sync at ${new Date().toLocaleString()}...`);
 
-cron.schedule('*/2 * * * *', async () => {
-  const data = await sageService.fetchLeaveRequests('2023-11-17', '2023-12-31');
-  console.log('⏲️ Fetching data from Sage service');
-  console.log(JSON.stringify(data, undefined, 2));
-});
+      await syncSageWithCalendar();
 
-const PORT = 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on  ${PORT}...`);
-});
+      console.log(`🛑 Sync is finished at ${new Date().toLocaleString()}\n`);
+    },
+    {
+      name: 'sage calendar sync',
+    },
+  );
+};
