@@ -10,10 +10,10 @@ export interface LeaveRequestCalendarEventData {
 }
 
 export async function insertLeaveRequestCalendarEvent(
-  leaveRequestCalendarEventData: LeaveRequestCalendarEventData,
+  leaveRequestCalendarEventData: LeaveRequestCalendarEventData
 ) {
   const eventRepository = AppDataSource.getRepository(
-    LeaveRequestCalendarEvent,
+    LeaveRequestCalendarEvent
   );
   const event = eventRepository.create(leaveRequestCalendarEventData);
   await eventRepository.save(event);
@@ -21,17 +21,17 @@ export async function insertLeaveRequestCalendarEvent(
 
 export async function getLeaveRequestCalendarEvents() {
   const eventRepository = AppDataSource.getRepository(
-    LeaveRequestCalendarEvent,
+    LeaveRequestCalendarEvent
   );
   return eventRepository.find();
 }
 
 export async function findLeaveRequestCalendarEventsByDateRange(
   fromDate: Date,
-  toDate: Date,
+  toDate: Date
 ) {
   const eventRepository = AppDataSource.getRepository(
-    LeaveRequestCalendarEvent,
+    LeaveRequestCalendarEvent
   );
   return eventRepository.find({
     where: {
@@ -43,42 +43,42 @@ export async function findLeaveRequestCalendarEventsByDateRange(
 
 export async function updateLeaveRequestCalendarEvent(
   id: number,
-  updateData: Partial<LeaveRequestCalendarEventData>,
+  updateData: Partial<LeaveRequestCalendarEventData>
 ) {
   const eventRepository = AppDataSource.getRepository(
-    LeaveRequestCalendarEvent,
+    LeaveRequestCalendarEvent
   );
   await eventRepository.update(id, updateData);
 }
 
 export async function deleteLeaveRequestCalendarEvent(id: number) {
   const eventRepository = AppDataSource.getRepository(
-    LeaveRequestCalendarEvent,
+    LeaveRequestCalendarEvent
   );
   await eventRepository.delete(id);
 }
 
 export async function findLeaveRequestCalendarEventById(id: number) {
   const eventRepository = AppDataSource.getRepository(
-    LeaveRequestCalendarEvent,
+    LeaveRequestCalendarEvent
   );
   return eventRepository.findOneBy({ id });
 }
 
 export async function findLeaveRequestCalendarEventBySageId(
-  sageLeaveRequestId: number,
+  sageLeaveRequestId: number
 ) {
   const eventRepository = AppDataSource.getRepository(
-    LeaveRequestCalendarEvent,
+    LeaveRequestCalendarEvent
   );
   return eventRepository.findBy({ sageLeaveRequestId });
 }
 
 export async function findLeaveRequestCalendarEventsBySageIds(
-  sageLeaveRequestIds: number[],
+  sageLeaveRequestIds: number[]
 ) {
   const eventRepository = AppDataSource.getRepository(
-    LeaveRequestCalendarEvent,
+    LeaveRequestCalendarEvent
   );
   return eventRepository.findBy({
     sageLeaveRequestId: In(sageLeaveRequestIds),

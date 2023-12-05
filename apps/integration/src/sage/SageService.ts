@@ -1,5 +1,5 @@
 import axios from 'axios';
-import {
+import type {
   CustomField,
   Employee,
   LeaveRequest,
@@ -151,7 +151,7 @@ export class SageService {
     fromDate: string,
     toDate: string,
     page = 1,
-    allLeaveRequests = [],
+    allLeaveRequests = []
   ): Promise<LeaveRequest[]> {
     const url = `${this.domain}/api/leave-management/requests`;
     const headers = {
@@ -167,7 +167,7 @@ export class SageService {
       });
 
       const pageData = response.data.data.map((leaveRequest) =>
-        this.convertLeaveRequest(leaveRequest),
+        this.convertLeaveRequest(leaveRequest)
       );
       const newAllRequests = allLeaveRequests.concat(pageData);
       const totalPages = response.data.meta.total_pages;
@@ -177,7 +177,7 @@ export class SageService {
           fromDate,
           toDate,
           page + 1,
-          newAllRequests,
+          newAllRequests
         );
       }
 
@@ -203,7 +203,7 @@ export class SageService {
       });
 
       const pageData = response.data.data.map((employee) =>
-        this.convertEmployee(employee),
+        this.convertEmployee(employee)
       );
       const newAllEmployees = allEmployees.concat(pageData);
       const totalPages = response.data.meta.total_pages;

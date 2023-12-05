@@ -1,6 +1,6 @@
 import * as cron from 'node-cron';
 
-import { syncSageWithCalendar } from 'src/integration/ServicesIntegration';
+import { syncSageWithCalendar } from '../integration/ServicesIntegration';
 
 export const InitCron = () => {
   cron.schedule(
@@ -14,6 +14,6 @@ export const InitCron = () => {
     },
     {
       name: 'sage calendar sync',
-    },
+    }
   );
 };

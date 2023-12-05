@@ -1,6 +1,6 @@
-import { LeaveRequest } from 'src/sage/SageServiceInterfaces';
-import { EventUpsertData } from 'src/calendar/CalendarServiceInterfaces';
-import { LeaveRequestCalendarEvent } from '../database/entities/LeaveRequestCalendarEventEntity';
+import type { LeaveRequest } from 'src/sage/SageServiceInterfaces';
+import type { EventUpsertData } from 'src/calendar/CalendarServiceInterfaces';
+import type { LeaveRequestCalendarEvent } from '../database/entities/LeaveRequestCalendarEventEntity';
 import { findTimeZoneByCountryCode } from '../tz-locales';
 import {
   deleteLeaveRequestCalendarEvent,
@@ -21,7 +21,7 @@ const sageService = new SageService({
 const keysEnvVar = process.env.GOOGLE_CALENDAR_CREDENTIALS;
 if (!keysEnvVar) {
   throw new Error(
-    'The $GOOGLE_CALENDAR_CREDENTIALS environment variable was not found!',
+    'The $GOOGLE_CALENDAR_CREDENTIALS environment variable was not found!'
   );
 }
 
@@ -42,7 +42,7 @@ function getTestUsers(): number[] {
 async function getFilteredLeaveRequests(
   leaveRequests: LeaveRequest[],
   statusCode: string,
-  filterTestUsers = false,
+  filterTestUsers = false
 ) {
   const testUsers = filterTestUsers ? getTestUsers() : null;
 
@@ -67,7 +67,7 @@ async function getCancelledLeaveRequests(leaveRequests: LeaveRequest[]) {
 }
 
 async function deleteObsoleteLeaveRequestCalendarEvent(
-  obsoleteLeaveRequestCalendarEvent: LeaveRequestCalendarEvent[],
+  obsoleteLeaveRequestCalendarEvent: LeaveRequestCalendarEvent[]
 ) {
   await Promise.all(
     obsoleteLeaveRequestCalendarEvent.map(
@@ -76,18 +76,18 @@ async function deleteObsoleteLeaveRequestCalendarEvent(
           await calendarService.deleteEvent(event.calendarEventId);
           await deleteLeaveRequestCalendarEvent(event.id);
           console.log(
-            `❌ Event Calendar removed for cancelled leave request id: ${event.sageLeaveRequestId}`,
+            `❌ Event Calendar removed for cancelled leave request id: ${event.sageLeaveRequestId}`
           );
         } catch (error) {
           console.error('Error deleting calendar event:', error);
         }
-      },
-    ),
+      }
+    )
   );
 }
 
 function createEventUpsertDataFromLeaveRequest(
-  leaveRequest: LeaveRequest,
+  leaveRequest: LeaveRequest
 ): EventUpsertData {
   const timeZone = findTimeZoneByCountryCode(leaveRequest.employee.country);
 
@@ -129,7 +129,7 @@ async function createCalendarEvent(leaveRequest: LeaveRequest) {
     const leaveCalendarEventData =
       createEventUpsertDataFromLeaveRequest(leaveRequest);
     const calendarEvent = await calendarService.createEvent(
-      leaveCalendarEventData,
+      leaveCalendarEventData
     );
 
     const startDateTime = leaveRequest.startTime
@@ -155,17 +155,17 @@ async function createCalendarEvent(leaveRequest: LeaveRequest) {
 
 async function updateCalendarEvent(
   leaveRequest: LeaveRequest,
-  leaveRequestCalendarEvent: LeaveRequestCalendarEvent,
+  leaveRequestCalendarEvent: LeaveRequestCalendarEvent
 ) {
   try {
     await calendarService.deleteEvent(
-      leaveRequestCalendarEvent.calendarEventId,
+      leaveRequestCalendarEvent.calendarEventId
     );
 
     const leaveCalendarEventData =
       createEventUpsertDataFromLeaveRequest(leaveRequest);
     const calendarEvent = await calendarService.createEvent(
-      leaveCalendarEventData,
+      leaveCalendarEventData
     );
 
     const startDateTime = leaveRequest.startTime
@@ -202,7 +202,7 @@ function areDateTimesEqual(dateTime1: Date, dateTimeAsString: string) {
 
 function shouldUpdateCalendarEvent(
   leaveRequest: LeaveRequest,
-  leaveRequestCalendarEvent: LeaveRequestCalendarEvent,
+  leaveRequestCalendarEvent: LeaveRequestCalendarEvent
 ) {
   const startDateTimeStr = leaveRequest.startTime
     ? `${leaveRequest.startDate}T${leaveRequest.startTime}`
@@ -215,7 +215,7 @@ function shouldUpdateCalendarEvent(
   return (
     !areDateTimesEqual(
       leaveRequestCalendarEvent.startDateTime,
-      startDateTimeStr,
+      startDateTimeStr
     ) ||
     !areDateTimesEqual(leaveRequestCalendarEvent.endDateTime, endDateTimeStr)
   );
@@ -236,10 +236,10 @@ async function createOrUpdateCalendarEvents(leaveRequests: LeaveRequest[]) {
         await updateCalendarEvent(leaveRequest, leaveRequestCalendarEvent);
       } else {
         console.log(
-          `📅 Event Calendar already exists for leave request: ${leaveRequest.employee.lastName} ${leaveRequest.employee.firstName}: ${leaveRequest.policy?.name}`,
+          `📅 Event Calendar already exists for leave request: ${leaveRequest.employee.lastName} ${leaveRequest.employee.firstName}: ${leaveRequest.policy?.name}`
         );
       }
-    }),
+    })
   );
 }
 
@@ -254,24 +254,24 @@ const syncSageWithCalendar = async () => {
 
   const allLeaveRequests = await sageService.fetchLeaveRequests(
     formattedFromDate,
-    formattedToDate,
+    formattedToDate
   );
   const approvedLeaveRequests = await getApprovedLeaveRequests(
-    allLeaveRequests,
+    allLeaveRequests
   );
 
   await createOrUpdateCalendarEvents(approvedLeaveRequests);
 
   const cancelledLeaveRequests = await getCancelledLeaveRequests(
-    allLeaveRequests,
+    allLeaveRequests
   );
 
   const cancelledLeaveRequestIds = cancelledLeaveRequests.map(
-    (cancelledLeaveRequest: LeaveRequest) => cancelledLeaveRequest.id,
+    (cancelledLeaveRequest: LeaveRequest) => cancelledLeaveRequest.id
   );
 
   const obsoleteEvents = await findLeaveRequestCalendarEventsBySageIds(
-    cancelledLeaveRequestIds,
+    cancelledLeaveRequestIds
   );
 
   await deleteObsoleteLeaveRequestCalendarEvent(obsoleteEvents);

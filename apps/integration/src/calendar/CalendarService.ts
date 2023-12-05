@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import {
+import type {
   CalendarEventResponse,
   CalendarServiceConfig,
   EventUpsertData,
@@ -24,7 +24,7 @@ export default class CalendarService {
         null,
         accountPrivateKey,
         ['https://www.googleapis.com/auth/calendar'],
-        subjectEmail,
+        subjectEmail
       );
       this.calendar = google.calendar({ version: 'v3', auth: jwtClient });
     } catch (error) {
@@ -46,7 +46,7 @@ export default class CalendarService {
 
   async getEvents(
     fromDate?: string,
-    toDate?: string,
+    toDate?: string
   ): Promise<CalendarEventResponse[]> {
     try {
       const params: GetEventsParams = {
@@ -99,7 +99,7 @@ export default class CalendarService {
 
   async updateEvent(
     eventId: string,
-    updatedEvent: EventUpsertData,
+    updatedEvent: EventUpsertData
   ): Promise<CalendarEventResponse> {
     try {
       const response = await this.calendar.events.update({

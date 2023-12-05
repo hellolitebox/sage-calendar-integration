@@ -3,7 +3,7 @@ import tzLocales from './tz-locales.json';
 
 export function findTimeZoneByCountryCode(countryCode: string) {
   const localeData = tzLocales.find(
-    (locale) => locale.countryCode === countryCode,
+    (locale) => locale.countryCode === countryCode
   );
   return localeData ? localeData.locales[0].ianaTimezone : null;
 }
