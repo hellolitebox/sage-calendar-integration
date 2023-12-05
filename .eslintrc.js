@@ -60,7 +60,6 @@ module.exports = {
     "react/jsx-filename-extension": [0],
     "import/no-extraneous-dependencies": "off",
     "no-constant-condition": "warn",
-    "no-console": "warn",
     "@typescript-eslint/naming-convention": [
       "error",
       {

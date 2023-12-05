@@ -114,7 +114,7 @@ export default class CalendarService {
     }
   }
 
-  async deleteEvent(eventId: string): Promise<any> {
+  async deleteEvent(eventId: string): Promise<{ success: true } | null> {
     try {
       await this.calendar.events.delete({
         calendarId: this.calendarId,

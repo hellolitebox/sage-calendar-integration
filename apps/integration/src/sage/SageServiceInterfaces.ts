@@ -122,9 +122,9 @@ export interface Employee {
   country: string;
   employeeNumber: string;
   employmentStatus: string;
-  teamHistory: any[];
-  employmentStatusHistory: any[];
-  positionHistory: any[];
+  teamHistory: unknown[];
+  employmentStatusHistory: unknown[];
+  positionHistory: unknown[];
 }
 
 export interface SageHrEmployee {
@@ -151,7 +151,7 @@ export interface SageHrEmployee {
   country: string;
   employee_number: string;
   employment_status: string;
-  team_history: any[];
-  employment_status_history: any[];
-  position_history: any[];
+  team_history: unknown[];
+  employment_status_history: unknown[];
+  position_history: unknown[];
 }
