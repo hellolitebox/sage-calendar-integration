@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "start": "node dist/index.js",
+    "start": "node dist/main.js",
     "dev": "nodemon src/main.ts",
     "build": "tsc -p .",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
