@@ -9,6 +9,31 @@ export interface LeaveRequestCalendarEventData {
   endDateTime: Date;
 }
 
+export interface LeaveRequestCalendarEventRepository {
+  insertLeaveRequestCalendarEvent(
+    leaveRequestCalendarEventData: LeaveRequestCalendarEventData
+  ): Promise<void>;
+  getLeaveRequestCalendarEvents(): Promise<LeaveRequestCalendarEvent[]>;
+  findLeaveRequestCalendarEventsByDateRange(
+    fromDate: Date,
+    toDate: Date
+  ): Promise<LeaveRequestCalendarEvent[]>;
+  updateLeaveRequestCalendarEvent(
+    id: number,
+    updateData: Partial<LeaveRequestCalendarEventData>
+  ): Promise<void>;
+  deleteLeaveRequestCalendarEvent(id: number): Promise<void>;
+  findLeaveRequestCalendarEventById(
+    id: number
+  ): Promise<LeaveRequestCalendarEvent | null>;
+  findLeaveRequestCalendarEventBySageId(
+    sageLeaveRequestId: number
+  ): Promise<LeaveRequestCalendarEvent[]>;
+  findLeaveRequestCalendarEventsBySageIds(
+    sageLeaveRequestIds: number[]
+  ): Promise<LeaveRequestCalendarEvent[]>;
+}
+
 export async function insertLeaveRequestCalendarEvent(
   leaveRequestCalendarEventData: LeaveRequestCalendarEventData
 ) {

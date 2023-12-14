@@ -1,4 +1,3 @@
-import { google } from 'googleapis';
 import type {
   CalendarEventResponse,
   CalendarServiceConfig,
@@ -11,25 +10,9 @@ export default class CalendarService {
 
   private readonly calendarId: string;
 
-  constructor({
-    calendarId,
-    clientEmail,
-    accountPrivateKey,
-    subjectEmail,
-  }: CalendarServiceConfig) {
+  constructor({ calendarId, calendarInstance }: CalendarServiceConfig) {
     this.calendarId = calendarId;
-    try {
-      const jwtClient = new google.auth.JWT(
-        clientEmail,
-        null,
-        accountPrivateKey,
-        ['https://www.googleapis.com/auth/calendar'],
-        subjectEmail
-      );
-      this.calendar = google.calendar({ version: 'v3', auth: jwtClient });
-    } catch (error) {
-      console.log(error);
-    }
+    this.calendar = calendarInstance;
   }
 
   async getCalendarById(calendarId: string) {

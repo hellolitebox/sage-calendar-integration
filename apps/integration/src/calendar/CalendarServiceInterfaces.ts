@@ -1,8 +1,8 @@
+import { calendar_v3 } from 'googleapis';
+import Calendar = calendar_v3.Calendar;
 export interface CalendarServiceConfig {
   calendarId: string;
-  clientEmail: string;
-  accountPrivateKey: string;
-  subjectEmail: string;
+  calendarInstance?: Calendar;
 }
 interface EventDateTime {
   dateTime: string;

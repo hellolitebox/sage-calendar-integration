@@ -118,7 +118,7 @@ export interface Employee {
   streetFirst: string;
   streetSecond: string;
   city: string;
-  postCode: number;
+  postCode: string;
   country: string;
   employeeNumber: string;
   employmentStatus: string;
@@ -147,7 +147,7 @@ export interface SageHrEmployee {
   street_first: string;
   street_second: string;
   city: string;
-  post_code: number;
+  post_code: string;
   country: string;
   employee_number: string;
   employment_status: string;
