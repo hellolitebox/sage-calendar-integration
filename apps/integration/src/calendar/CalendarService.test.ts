@@ -149,4 +149,40 @@ describe('CalendarService', () => {
       eventId: 'test-event-id',
     });
   });
+
+  test('getCalendarById handles errors', async () => {
+    mockCalendarInstance.calendars.get.mockRejectedValue(
+      new Error('Test error')
+    );
+    const logSpy = jest.spyOn(console, 'log');
+
+    const result = await calendarService.getCalendarById('test-calendar-id');
+
+    expect(result).toBeNull();
+    expect(logSpy).toHaveBeenCalledWith(
+      'Error fetching calendar with ID test-calendar-id:',
+      expect.any(Error)
+    );
+  });
+
+  test('getEvents handles invalid dates', async () => {
+    const result = await calendarService.getEvents(
+      'invalid-date',
+      'invalid-date'
+    );
+
+    expect(mockCalendarInstance.events.list).not.toHaveBeenCalled();
+    expect(result).toEqual([]);
+  });
+
+  test('getEvents without dates', async () => {
+    const eventsData = await calendarService.getEvents();
+
+    expect(eventsData).toEqual([mockEvent]);
+    expect(mockCalendarInstance.events.list).toHaveBeenCalledWith({
+      calendarId: 'test-calendar-id',
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+  });
 });

@@ -1,6 +1,35 @@
 import { mockEmployees } from './mockEmployees';
 import { mockPolicies } from './mockPolicies';
 
+export const mockSageAPILeaveRequests = [
+  {
+    id: 1,
+    status: 'Approved',
+    status_code: 'approved',
+    policy_id: 1,
+    employee_id: 1,
+    replacement: null,
+    details: 'Taking leave for personal reasons',
+    is_multi_date: false,
+    is_single_day: true,
+    is_part_of_day: false,
+    first_part_of_day: false,
+    second_part_of_day: false,
+    start_date: '2023-11-21',
+    end_date: '2023-11-21',
+    request_date: '2023-11-21',
+    approval_date: '2023-11-21',
+    hours: null,
+    specific_time: false,
+    start_time: null,
+    end_time: null,
+    child_id: null,
+    shared_person_name: '',
+    shared_person_nin: '',
+    fields: [],
+  },
+];
+
 export const mockLeaveRequests = [
   {
     id: 1,

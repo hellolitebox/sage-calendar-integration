@@ -3,6 +3,7 @@ import axios from 'axios';
 import { SageService } from './SageService';
 import { mockSageAPIPolicies } from './mock/mockPolicies';
 import { mockSageAPIEmployees } from './mock/mockEmployees';
+import { mockSageAPILeaveRequests } from './mock/mockLeaveRequest';
 
 const mockedAxiosGet = axios.get as jest.Mock;
 
@@ -30,6 +31,10 @@ describe('SageService', () => {
       sageDomain: 'https://example.com',
       sageApiKey: 'test-api-key',
     });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
   test('should initialize with provided domain and API key', () => {
@@ -70,5 +75,44 @@ describe('SageService', () => {
     );
 
     expect(employees).toHaveLength(2);
+  });
+
+  test('fetchLeaveRequests handles errors', async () => {
+    mockedAxiosGet.mockRejectedValue(new Error('Network error'));
+
+    await expect(
+      sageService.fetchLeaveRequests('2023-01-01', '2023-01-31')
+    ).rejects.toThrow('Network error');
+  });
+
+  test('fetchLeaveRequests handles multiple pages', async () => {
+    mockedAxiosGet
+      .mockImplementationOnce((url: string) => {
+        if (url.includes('leave-management/requests')) {
+          return Promise.resolve({
+            data: {
+              data: mockSageAPILeaveRequests,
+              meta: { total_pages: 2 },
+            },
+          });
+        }
+      })
+      .mockImplementationOnce((url: string) => {
+        if (url.includes('leave-management/requests')) {
+          return Promise.resolve({
+            data: {
+              data: mockSageAPILeaveRequests,
+              meta: { total_pages: 2 },
+            },
+          });
+        }
+      });
+
+    const leaveRequests = await sageService.fetchLeaveRequests(
+      '2023-01-01',
+      '2023-01-31'
+    );
+
+    expect(leaveRequests).toHaveLength(2);
   });
 });
