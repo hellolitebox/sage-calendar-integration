@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { DataSource } from 'typeorm';
 import { LeaveRequestCalendarEvent } from './entities/LeaveRequestCalendarEventEntity';
+import migrations from './migration';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -11,7 +12,7 @@ export const AppDataSource = new DataSource({
   database: process.env.POSTGRES_DATA_BASE,
   entities: [LeaveRequestCalendarEvent],
   synchronize: false,
-  migrations: ['src/database/migration/**/*.ts'],
+  migrations,
   migrationsTableName: 'migrations',
   migrationsRun: true,
 });
