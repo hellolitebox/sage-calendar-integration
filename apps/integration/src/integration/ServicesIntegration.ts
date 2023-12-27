@@ -262,7 +262,7 @@ class SageLeaveEventScheduler {
   }
 
   public async syncSageWithCalendar() {
-    const fromDate = new Date('2023-12-11');
+    const fromDate = new Date();
     fromDate.setHours(0, 0, 0, 0);
     const toDate = new Date();
     toDate.setDate(toDate.getDate() + 60);
