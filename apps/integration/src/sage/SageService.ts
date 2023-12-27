@@ -14,7 +14,7 @@ import type {
 } from './SageServiceInterfaces';
 
 const FIRST_PART_OF_DAY_START_TIME = '09:00';
-const SECOND_PART_OF_DAY_START_TIME = '13:00';
+const SECOND_PART_OF_DAY_START_TIME = '14:00';
 
 export class SageService {
   private domain: string;
