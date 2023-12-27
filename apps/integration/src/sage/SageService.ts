@@ -13,6 +13,9 @@ import type {
   SageServiceConfig,
 } from './SageServiceInterfaces';
 
+const FIRST_PART_OF_DAY_START_TIME = '09:00';
+const SECOND_PART_OF_DAY_START_TIME = '13:00';
+
 export class SageService {
   private domain: string;
 
@@ -53,7 +56,49 @@ export class SageService {
     }
   }
 
+  private calculateEndTime(startTime: string, hoursToAdd: number): string {
+    const [startHours, startMinutes] = startTime.split(':').map(Number);
+
+    const addHours = Math.floor(hoursToAdd); // The whole hours part
+    const addMinutes = (hoursToAdd - addHours) * 60; // The minutes part, from the decimal
+
+    let endHours = startHours + addHours;
+    let endMinutes = startMinutes + addMinutes;
+
+    // Handle any overflow from minutes to hours
+    if (endMinutes >= 60) {
+      endHours += Math.floor(endMinutes / 60); // Add any extra hours from minutes
+      endMinutes = endMinutes % 60; // Remainder is the new minutes
+    }
+
+    // Handle if hours go past 24
+    endHours = endHours % 24;
+
+    const formattedEndTime = `${endHours
+      .toString()
+      .padStart(2, '0')}:${endMinutes.toFixed(0).padStart(2, '0')}`;
+
+    return formattedEndTime;
+  }
+
   private convertLeaveRequest(leaveRequest: SageHrLeaveRequest): LeaveRequest {
+    let startTime = leaveRequest.start_time;
+    let endTime = leaveRequest.end_time;
+
+    if (leaveRequest.first_part_of_day) {
+      startTime =
+        process.env.FIRST_PART_OF_DAY_START_TIME ||
+        FIRST_PART_OF_DAY_START_TIME;
+      const hoursToAdd = leaveRequest.hours || 4;
+      endTime = this.calculateEndTime(startTime, hoursToAdd);
+    } else if (leaveRequest.second_part_of_day) {
+      startTime =
+        process.env.SECOND_PART_OF_DAY_START_TIME ||
+        SECOND_PART_OF_DAY_START_TIME;
+      const hoursToAdd = leaveRequest.hours || 4;
+      endTime = this.calculateEndTime(startTime, hoursToAdd);
+    }
+
     return {
       id: leaveRequest.id,
       status: leaveRequest.status,
@@ -77,8 +122,8 @@ export class SageService {
         : null,
       hours: leaveRequest.hours,
       specificTime: leaveRequest.specific_time,
-      startTime: leaveRequest.start_time,
-      endTime: leaveRequest.end_time,
+      startTime: startTime,
+      endTime: endTime,
       childId: leaveRequest.child_id,
       sharedPersonName: leaveRequest.shared_person_name,
       sharedPersonNin: leaveRequest.shared_person_nin,
