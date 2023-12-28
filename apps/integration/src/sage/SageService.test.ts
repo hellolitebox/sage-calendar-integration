@@ -115,4 +115,168 @@ describe('SageService', () => {
 
     expect(leaveRequests).toHaveLength(2);
   });
+
+  test('"first_part_of_day": should calculate startTime and endTime with default hours and time', async () => {
+    mockedAxiosGet.mockImplementation((url: string) => {
+      if (url.includes('leave-management/requests')) {
+        const [mockSageAPILeaveRequest] = mockSageAPILeaveRequests;
+        console.log('mockSageAPILeaveRequest', mockSageAPILeaveRequest);
+        return Promise.resolve({
+          data: {
+            data: [
+              {
+                ...mockSageAPILeaveRequest,
+                is_single_day: false,
+                is_part_of_day: true,
+                first_part_of_day: true,
+                start_date: '2023-11-21',
+                end_date: '2023-11-21',
+                hours: null,
+                start_time: null,
+                end_time: null,
+              },
+            ],
+            meta: { total_pages: 2 },
+          },
+        });
+      }
+    });
+
+    const [leaveRequest] = await sageService.fetchLeaveRequests(
+      '2023-01-01',
+      '2023-01-31'
+    );
+
+    expect(leaveRequest).toMatchObject({
+      isPartOfDay: true,
+      firstPartOfDay: true,
+      secondPartOfDay: false,
+      hours: 4,
+      startTime: '09:00',
+      endTime: '13:00',
+    });
+  });
+
+  test('"second_part_of_day": should calculate startTime and endTime with default hours and time', async () => {
+    mockedAxiosGet.mockImplementation((url: string) => {
+      if (url.includes('leave-management/requests')) {
+        const [mockSageAPILeaveRequest] = mockSageAPILeaveRequests;
+        console.log('mockSageAPILeaveRequest', mockSageAPILeaveRequest);
+        return Promise.resolve({
+          data: {
+            data: [
+              {
+                ...mockSageAPILeaveRequest,
+                is_single_day: false,
+                is_part_of_day: true,
+                second_part_of_day: true,
+                start_date: '2023-11-21',
+                end_date: '2023-11-21',
+                hours: null,
+                start_time: null,
+                end_time: null,
+              },
+            ],
+            meta: { total_pages: 2 },
+          },
+        });
+      }
+    });
+
+    const [leaveRequest] = await sageService.fetchLeaveRequests(
+      '2023-01-01',
+      '2023-01-31'
+    );
+
+    expect(leaveRequest).toMatchObject({
+      isPartOfDay: true,
+      firstPartOfDay: false,
+      secondPartOfDay: true,
+      hours: 4,
+      startTime: '14:00',
+      endTime: '18:00',
+    });
+  });
+
+  test('"first_part_of_day": should calculate startTime and endTime with arbitrary hours and time', async () => {
+    mockedAxiosGet.mockImplementation((url: string) => {
+      if (url.includes('leave-management/requests')) {
+        const [mockSageAPILeaveRequest] = mockSageAPILeaveRequests;
+        console.log('mockSageAPILeaveRequest', mockSageAPILeaveRequest);
+        return Promise.resolve({
+          data: {
+            data: [
+              {
+                ...mockSageAPILeaveRequest,
+                is_single_day: false,
+                is_part_of_day: true,
+                first_part_of_day: true,
+                start_date: '2023-11-21',
+                end_date: '2023-11-21',
+                hours: 2.75,
+                start_time: null,
+                end_time: null,
+              },
+            ],
+            meta: { total_pages: 2 },
+          },
+        });
+      }
+    });
+
+    const [leaveRequest] = await sageService.fetchLeaveRequests(
+      '2023-01-01',
+      '2023-01-31'
+    );
+
+    expect(leaveRequest).toMatchObject({
+      isPartOfDay: true,
+      firstPartOfDay: true,
+      secondPartOfDay: false,
+      hours: 2.75,
+      startTime: '09:00',
+      endTime: '11:45',
+    });
+  });
+
+  test('"second_part_of_day": should calculate startTime and endTime with arbitrary hours and time', async () => {
+    mockedAxiosGet.mockImplementation((url: string) => {
+      if (url.includes('leave-management/requests')) {
+        const [mockSageAPILeaveRequest] = mockSageAPILeaveRequests;
+        console.log('mockSageAPILeaveRequest', mockSageAPILeaveRequest);
+        return Promise.resolve({
+          data: {
+            data: [
+              {
+                ...mockSageAPILeaveRequest,
+                is_single_day: false,
+                is_part_of_day: true,
+                second_part_of_day: true,
+                start_date: '2023-11-21',
+                end_date: '2023-11-21',
+                hours: 2.5,
+                start_time: null,
+                end_time: null,
+              },
+            ],
+            meta: { total_pages: 2 },
+          },
+        });
+      }
+    });
+
+    const [leaveRequest] = await sageService.fetchLeaveRequests(
+      '2023-01-01',
+      '2023-01-31'
+    );
+
+    expect(leaveRequest).toMatchObject({
+      isPartOfDay: true,
+      firstPartOfDay: false,
+      secondPartOfDay: true,
+      hours: 2.5,
+      startTime: '14:00',
+      endTime: '16:30',
+    });
+  });
 });

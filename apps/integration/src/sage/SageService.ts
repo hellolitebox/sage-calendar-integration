@@ -15,6 +15,7 @@ import type {
 
 const FIRST_PART_OF_DAY_START_TIME = '09:00';
 const SECOND_PART_OF_DAY_START_TIME = '14:00';
+const DEFAULT_HOURS_TO_ADD = 4;
 
 export class SageService {
   private domain: string;
@@ -84,18 +85,17 @@ export class SageService {
   private convertLeaveRequest(leaveRequest: SageHrLeaveRequest): LeaveRequest {
     let startTime = leaveRequest.start_time;
     let endTime = leaveRequest.end_time;
+    const hoursToAdd = leaveRequest.hours || DEFAULT_HOURS_TO_ADD;
 
     if (leaveRequest.first_part_of_day) {
       startTime =
         process.env.FIRST_PART_OF_DAY_START_TIME ||
         FIRST_PART_OF_DAY_START_TIME;
-      const hoursToAdd = leaveRequest.hours || 4;
       endTime = this.calculateEndTime(startTime, hoursToAdd);
     } else if (leaveRequest.second_part_of_day) {
       startTime =
         process.env.SECOND_PART_OF_DAY_START_TIME ||
         SECOND_PART_OF_DAY_START_TIME;
-      const hoursToAdd = leaveRequest.hours || 4;
       endTime = this.calculateEndTime(startTime, hoursToAdd);
     }
 
@@ -120,7 +120,7 @@ export class SageService {
       approvalDate: leaveRequest.approval_date
         ? leaveRequest.approval_date
         : null,
-      hours: leaveRequest.hours,
+      hours: leaveRequest.hours || hoursToAdd,
       specificTime: leaveRequest.specific_time,
       startTime: startTime,
       endTime: endTime,
