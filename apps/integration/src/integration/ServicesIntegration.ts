@@ -122,7 +122,18 @@ class SageLeaveEventScheduler {
       };
     } else {
       start = { date: leaveRequest.startDate, timeZone };
-      end = { date: leaveRequest.endDate, timeZone };
+
+      if (leaveRequest.isMultiDate) {
+        const endDate = new Date(leaveRequest.endDate);
+        endDate.setDate(endDate.getDate() + 1); // Add one day
+
+        // Convert back to YYYY-MM-DD format
+        const adjustedEndDate = endDate.toISOString().split('T')[0];
+
+        end = { date: adjustedEndDate, timeZone };
+      } else {
+        end = { date: leaveRequest.endDate, timeZone };
+      }
     }
 
     const eventData: EventUpsertData = {
