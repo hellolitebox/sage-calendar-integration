@@ -28,7 +28,7 @@ export interface LeaveRequestCalendarEventRepository {
   ): Promise<LeaveRequestCalendarEvent | null>;
   findLeaveRequestCalendarEventBySageId(
     sageLeaveRequestId: number
-  ): Promise<LeaveRequestCalendarEvent[]>;
+  ): Promise<LeaveRequestCalendarEvent>;
   findLeaveRequestCalendarEventsBySageIds(
     sageLeaveRequestIds: number[]
   ): Promise<LeaveRequestCalendarEvent[]>;
@@ -96,7 +96,10 @@ export async function findLeaveRequestCalendarEventBySageId(
   const eventRepository = AppDataSource.getRepository(
     LeaveRequestCalendarEvent
   );
-  return eventRepository.findBy({ sageLeaveRequestId });
+  const [sageLeaveRequestCalendarEvent] = await eventRepository.findBy({
+    sageLeaveRequestId,
+  });
+  return sageLeaveRequestCalendarEvent;
 }
 
 export async function findLeaveRequestCalendarEventsBySageIds(
