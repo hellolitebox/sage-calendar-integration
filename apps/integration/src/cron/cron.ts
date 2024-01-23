@@ -18,6 +18,8 @@ export const InitCron = () => {
         sageApiKey: process.env.SAGE_API_KEY,
       });
 
+      await sageService.initialize();
+
       // load the environment variable with keys
       const keysEnvVar = process.env.GOOGLE_CALENDAR_CREDENTIALS;
       if (!keysEnvVar) {

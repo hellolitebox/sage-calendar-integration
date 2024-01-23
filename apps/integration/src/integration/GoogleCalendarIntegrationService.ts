@@ -106,7 +106,7 @@ export class GoogleCalendarIntegrationService
       console.error('Error deleting calendar event:', error);
     }
   }
-  getLeaveRequestAlreadyExistsMessage(leaveRequest: LeaveRequest): string {
+  formatNoUpdateNeededMessage(leaveRequest: LeaveRequest): string {
     return `📅 Event Calendar already exists for leave request: ${leaveRequest.employee.lastName} ${leaveRequest.employee.firstName}: ${leaveRequest.policy?.name}`;
   }
 }

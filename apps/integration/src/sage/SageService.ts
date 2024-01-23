@@ -16,6 +16,7 @@ import type {
 const FIRST_PART_OF_DAY_START_TIME = '09:00';
 const SECOND_PART_OF_DAY_START_TIME = '14:00';
 const DEFAULT_HOURS_TO_ADD = 4;
+const DEFAULT_FULL_DAY_HOURS = 8;
 
 export class SageService {
   private domain: string;
@@ -31,8 +32,15 @@ export class SageService {
     this.apiKey = sageApiKey;
     this.policiesMap = new Map();
     this.employeesMap = new Map();
-    this.initializePoliciesMap();
-    this.initializeEmployeesMap();
+  }
+
+  async initialize() {
+    try {
+      await this.initializePoliciesMap();
+      await this.initializeEmployeesMap();
+    } catch (error) {
+      console.error('Error during initialization:', error);
+    }
   }
 
   private async initializePoliciesMap(): Promise<void> {
@@ -85,7 +93,21 @@ export class SageService {
   private convertLeaveRequest(leaveRequest: SageHrLeaveRequest): LeaveRequest {
     let startTime = leaveRequest.start_time;
     let endTime = leaveRequest.end_time;
-    const hoursToAdd = leaveRequest.hours || DEFAULT_HOURS_TO_ADD;
+    const hoursToAdd = leaveRequest.is_part_of_day
+      ? leaveRequest.hours || DEFAULT_HOURS_TO_ADD
+      : leaveRequest.hours;
+
+    let isSingleDay = leaveRequest.is_single_day;
+    let isPartOfDay = leaveRequest.is_part_of_day;
+    // Fix inconsistency in is_single_day and is_part_of_day
+    if (
+      leaveRequest.is_single_day &&
+      leaveRequest.hours != null &&
+      leaveRequest.hours < DEFAULT_FULL_DAY_HOURS
+    ) {
+      isSingleDay = false;
+      isPartOfDay = true;
+    }
 
     if (leaveRequest.first_part_of_day) {
       startTime =
@@ -110,8 +132,8 @@ export class SageService {
         : undefined,
       details: leaveRequest.details,
       isMultiDate: leaveRequest.is_multi_date,
-      isSingleDay: leaveRequest.is_single_day,
-      isPartOfDay: leaveRequest.is_part_of_day,
+      isSingleDay,
+      isPartOfDay,
       firstPartOfDay: leaveRequest.first_part_of_day,
       secondPartOfDay: leaveRequest.second_part_of_day,
       startDate: leaveRequest.start_date,
@@ -283,5 +305,9 @@ export class SageService {
       console.error('Error fetching leave management requests:', error);
       throw error;
     }
+  }
+
+  public getEmployeesMap(): Map<number, Employee> {
+    return this.employeesMap;
   }
 }
