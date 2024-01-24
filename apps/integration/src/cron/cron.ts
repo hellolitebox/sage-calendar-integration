@@ -54,8 +54,6 @@ export const InitCron = () => {
       });
 
       await sageLeaveEventScheduler.syncSageWithIntegrationServices();
-
-      console.log(`🛑 Sync is finished at ${new Date().toLocaleString()}\n`);
     },
     {
       name: 'sage calendar sync',

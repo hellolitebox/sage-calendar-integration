@@ -145,25 +145,26 @@ class SageLeaveEventScheduler {
     );
   }
 
-  async processAcceptedLeaveRequest(leaveRequest) {
-    for (const service of this.integrationServices) {
-      const leaveRequestCalendarEvent =
-        await this.leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventBySageId(
-          leaveRequest.id
-        );
-      if (!leaveRequestCalendarEvent) {
-        await this.handleNewLeaveRequest(leaveRequest, service);
-      } else if (
-        this.hasChangesToReflect(leaveRequest, leaveRequestCalendarEvent)
-      ) {
-        await this.updateExistingLeaveRequest(
-          leaveRequest,
-          leaveRequestCalendarEvent,
-          service
-        );
-      } else {
-        console.log(service.formatNoUpdateNeededMessage(leaveRequest));
-      }
+  async processAcceptedLeaveRequest(
+    leaveRequest: LeaveRequest,
+    service: SageIntegrationService
+  ) {
+    const leaveRequestCalendarEvent =
+      await this.leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventBySageId(
+        leaveRequest.id
+      );
+    if (!leaveRequestCalendarEvent) {
+      await this.handleNewLeaveRequest(leaveRequest, service);
+    } else if (
+      this.hasChangesToReflect(leaveRequest, leaveRequestCalendarEvent)
+    ) {
+      await this.updateExistingLeaveRequest(
+        leaveRequest,
+        leaveRequestCalendarEvent,
+        service
+      );
+    } else {
+      console.log(service.formatNoUpdateNeededMessage(leaveRequest));
     }
   }
 
@@ -200,7 +201,9 @@ class SageLeaveEventScheduler {
       this.getApprovedLeaveRequests(allLeaveRequests);
 
     for (const leaveRequest of approvedLeaveRequests) {
-      await this.processAcceptedLeaveRequest(leaveRequest);
+      for (const service of this.integrationServices) {
+        this.processAcceptedLeaveRequest(leaveRequest, service);
+      }
     }
 
     const cancelledLeaveRequests = await this.getCancelledLeaveRequests(
