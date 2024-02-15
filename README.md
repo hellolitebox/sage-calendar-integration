@@ -168,3 +168,37 @@ Once the cron job initiates the synchronization, you will see logs indicating th
 ```
 
 These logs will help you track the progress of the synchronization and quickly identify the status of each leave request being processed.
+
+# Adding More Integrations
+
+This project is designed to be extensible and allows for the integration of additional services. To add a new service, the service must implement the `SageIntegrationService` interface. This interface includes the following methods:
+
+- `handleCreateLeaveRequest(leaveRequest: LeaveRequest): Promise<string>;`
+- `handleUpdateLeaveRequest(leaveRequest: LeaveRequest, integrationLeaveId: string): Promise<string>;`
+- `handleRemoveLeaveRequest(leaveRequest: LeaveRequest, integrationLeaveId: string): Promise<void>;`
+- `formatNoUpdateNeededMessage(leaveRequest: LeaveRequest): string;`
+
+Each of these methods corresponds to a specific action related to leave requests:
+
+- **handleCreateLeaveRequest**: This method is called when a new leave request is created. It should handle the logic necessary to create a corresponding event or entry in the integrated service.
+- **handleUpdateLeaveRequest**: This method is called when an existing leave request is updated. It should handle the logic necessary to update the corresponding event or entry in the integrated service.
+- **handleRemoveLeaveRequest**: This method is called when a leave request is cancelled. It should handle the logic necessary to remove the corresponding event or entry in the integrated service.
+- **formatNoUpdateNeededMessage**: This method is called when a leave request is processed but no changes are needed. It should return a string message that will be logged to indicate that no update was needed.
+
+The `SageLeaveEventScheduler` class is responsible for processing leave requests and interacting with the integrated services. It takes an array of `SageIntegrationService` instances as part of its configuration. When processing leave requests, it will iterate over each service in this array and call the appropriate method based on the status of the leave request.
+
+Here is an example of how to add a new service to the `SageLeaveEventScheduler`:
+```javascript
+const myNewService = new MyNewService();
+
+const scheduler = new SageLeaveEventScheduler({
+  integrationServices: [myNewService, ...existingServices],
+  sageService,
+  leaveRequestCalendarEventRepository,
+});
+```
+In this example, `MyNewService` is a class that implements the `SageIntegrationService` interface. An instance of this class is created and added to the array of integration services passed to the `SageLeaveEventScheduler`.
+
+Remember, each service you add must implement all methods defined in the `SageIntegrationService` interface. This ensures that the `SageLeaveEventScheduler` can correctly interact with the service when processing leave requests.
+
+This design allows for easy addition of new services and makes the project highly extensible. You can add as many services as you need, and each one can handle leave requests in a way that makes sense for the specific service.
