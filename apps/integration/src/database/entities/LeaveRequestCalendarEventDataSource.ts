@@ -4,7 +4,7 @@ import { LeaveRequestCalendarEvent } from './LeaveRequestCalendarEventEntity';
 
 export interface LeaveRequestCalendarEventData {
   sageLeaveRequestId: number;
-  calendarEventId: string;
+  calendarEventId?: string;
   startDateTime: Date;
   endDateTime: Date;
 }
@@ -12,7 +12,7 @@ export interface LeaveRequestCalendarEventData {
 export interface LeaveRequestCalendarEventRepository {
   insertLeaveRequestCalendarEvent(
     leaveRequestCalendarEventData: LeaveRequestCalendarEventData
-  ): Promise<void>;
+  ): Promise<LeaveRequestCalendarEvent>;
   getLeaveRequestCalendarEvents(): Promise<LeaveRequestCalendarEvent[]>;
   findLeaveRequestCalendarEventsByDateRange(
     fromDate: Date,
@@ -41,7 +41,7 @@ export async function insertLeaveRequestCalendarEvent(
     LeaveRequestCalendarEvent
   );
   const event = eventRepository.create(leaveRequestCalendarEventData);
-  await eventRepository.save(event);
+  return await eventRepository.save(event);
 }
 
 export async function getLeaveRequestCalendarEvents() {

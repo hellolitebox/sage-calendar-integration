@@ -1,10 +1,13 @@
 import type { LeaveRequest } from 'src/sage/SageServiceInterfaces';
 import type { LeaveRequestCalendarEvent } from '../database/entities/LeaveRequestCalendarEventEntity';
-import type { LeaveRequestCalendarEventRepository } from '../database/entities/LeaveRequestCalendarEventDataSource';
+import type {
+  LeaveRequestCalendarEventData,
+  LeaveRequestCalendarEventRepository,
+} from '../database/entities/LeaveRequestCalendarEventDataSource';
 import type { SageService } from '../sage/SageService';
 import { areDateTimesEqual, getLeaveRequestDateTimes } from '../utils/dates';
 
-const DAYS_TO_ADD = 60;
+const DAYS_TO_ADD = Number(process.env.LEAVE_REQUEST_QUERY_DAYS_RANGE) || 60;
 
 export interface SageIntegrationService {
   handleCreateLeaveRequest(leaveRequest: LeaveRequest): Promise<string>;
@@ -12,7 +15,10 @@ export interface SageIntegrationService {
     leaveRequest: LeaveRequest,
     integrationLeaveId: string
   ): Promise<string>;
-  handleRemoveLeaveRequest(integrationLeaveId: string): Promise<void>;
+  handleRemoveLeaveRequest(
+    leaveRequest: LeaveRequest,
+    integrationLeaveId: string
+  ): Promise<void>;
   formatNoUpdateNeededMessage(leaveRequest: LeaveRequest): string;
 }
 
@@ -62,7 +68,9 @@ class SageLeaveEventScheduler {
         return isStatusMatch && isTestUser;
       });
     } catch (error) {
-      console.error('Error while filtering leave requests:', error);
+      console.error(
+        `Error while filtering leave requests\n${error.message || ''}`
+      );
       return [];
     }
   }
@@ -103,22 +111,20 @@ class SageLeaveEventScheduler {
 
   private async handleNewLeaveRequest(
     leaveRequest: LeaveRequest,
-    service: SageIntegrationService
+    service: SageIntegrationService,
+    leaveRequestCalendarEvent: LeaveRequestCalendarEvent
   ) {
-    const { startDateTime, endDateTime } =
-      getLeaveRequestDateTimes(leaveRequest);
-
     const leaveRequestIntegrationId = await service.handleCreateLeaveRequest(
       leaveRequest
     );
 
-    await this.leaveRequestCalendarEventRepository.insertLeaveRequestCalendarEvent(
-      {
-        sageLeaveRequestId: leaveRequest.id,
-        calendarEventId: leaveRequestIntegrationId,
-        startDateTime,
-        endDateTime,
-      }
+    const leaveRequestIntegrationData = {
+      calendarEventId: leaveRequestIntegrationId,
+    };
+
+    await this.leaveRequestCalendarEventRepository.updateLeaveRequestCalendarEvent(
+      leaveRequestCalendarEvent.id,
+      leaveRequestIntegrationData
     );
   }
 
@@ -127,34 +133,43 @@ class SageLeaveEventScheduler {
     leaveRequestCalendarEvent: LeaveRequestCalendarEvent,
     service: SageIntegrationService
   ) {
-    const { startDateTime, endDateTime } =
-      getLeaveRequestDateTimes(leaveRequest);
-
     const leaveRequestIntegrationId = await service.handleUpdateLeaveRequest(
       leaveRequest,
       leaveRequestCalendarEvent.calendarEventId
     );
+    const { startDateTime, endDateTime } =
+      getLeaveRequestDateTimes(leaveRequest);
+    const baseIntegrationData: Partial<LeaveRequestCalendarEventData> = {
+      startDateTime,
+      endDateTime,
+    };
 
-    this.leaveRequestCalendarEventRepository.updateLeaveRequestCalendarEvent(
+    const leaveRequestIntegrationData = {
+      ...baseIntegrationData,
+      calendarEventId: leaveRequestIntegrationId,
+    };
+
+    await this.leaveRequestCalendarEventRepository.updateLeaveRequestCalendarEvent(
       leaveRequestCalendarEvent.id,
-      {
-        calendarEventId: leaveRequestIntegrationId,
-        startDateTime,
-        endDateTime,
-      }
+      leaveRequestIntegrationData
     );
+  }
+
+  private isNewEvent(leaveRequestCalendarEvent: LeaveRequestCalendarEvent) {
+    return Boolean(!leaveRequestCalendarEvent.calendarEventId);
   }
 
   async processAcceptedLeaveRequest(
     leaveRequest: LeaveRequest,
-    service: SageIntegrationService
+    service: SageIntegrationService,
+    leaveRequestCalendarEvent: LeaveRequestCalendarEvent
   ) {
-    const leaveRequestCalendarEvent =
-      await this.leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventBySageId(
-        leaveRequest.id
+    if (this.isNewEvent(leaveRequestCalendarEvent)) {
+      await this.handleNewLeaveRequest(
+        leaveRequest,
+        service,
+        leaveRequestCalendarEvent
       );
-    if (!leaveRequestCalendarEvent) {
-      await this.handleNewLeaveRequest(leaveRequest, service);
     } else if (
       this.hasChangesToReflect(leaveRequest, leaveRequestCalendarEvent)
     ) {
@@ -168,18 +183,23 @@ class SageLeaveEventScheduler {
     }
   }
 
-  async processCancelledLeaveRequest(cancelledLeaveRequest) {
-    for (const service of this.integrationServices) {
-      try {
-        await service.handleRemoveLeaveRequest(
-          cancelledLeaveRequest.calendarEventId
-        );
-        await this.leaveRequestCalendarEventRepository.deleteLeaveRequestCalendarEvent(
-          cancelledLeaveRequest.id
-        );
-      } catch (error) {
-        console.error('Error removing cancelled leave request:', error);
+  async processCancelledLeaveRequest(
+    leaveRequest: LeaveRequest,
+    leaveRequestCalendarEvent: LeaveRequestCalendarEvent,
+    service: SageIntegrationService
+  ) {
+    try {
+      if (!leaveRequestCalendarEvent.calendarEventId) {
+        return;
       }
+      await service.handleRemoveLeaveRequest(
+        leaveRequest,
+        leaveRequestCalendarEvent.calendarEventId
+      );
+    } catch (error) {
+      console.error(
+        `Error removing cancelled leave request\n${error.message || ''}`
+      );
     }
   }
 
@@ -201,8 +221,30 @@ class SageLeaveEventScheduler {
       this.getApprovedLeaveRequests(allLeaveRequests);
 
     for (const leaveRequest of approvedLeaveRequests) {
+      let leaveRequestCalendarEvent =
+        await this.leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventBySageId(
+          leaveRequest.id
+        );
+
+      if (!leaveRequestCalendarEvent) {
+        const { startDateTime, endDateTime } =
+          getLeaveRequestDateTimes(leaveRequest);
+
+        leaveRequestCalendarEvent =
+          await this.leaveRequestCalendarEventRepository.insertLeaveRequestCalendarEvent(
+            {
+              sageLeaveRequestId: leaveRequest.id,
+              startDateTime,
+              endDateTime,
+            }
+          );
+      }
       for (const service of this.integrationServices) {
-        this.processAcceptedLeaveRequest(leaveRequest, service);
+        this.processAcceptedLeaveRequest(
+          leaveRequest,
+          service,
+          leaveRequestCalendarEvent
+        );
       }
     }
 
@@ -210,17 +252,26 @@ class SageLeaveEventScheduler {
       allLeaveRequests
     );
 
-    const cancelledLeaveRequestIds = cancelledLeaveRequests.map(
-      (cancelledLeaveRequest: LeaveRequest) => cancelledLeaveRequest.id
-    );
+    for (const leaveRequest of cancelledLeaveRequests) {
+      const leaveRequestCalendarEvent =
+        await this.leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventBySageId(
+          leaveRequest.id
+        );
 
-    const obsoleteEvents =
-      await this.leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventsBySageIds(
-        cancelledLeaveRequestIds
+      if (!leaveRequestCalendarEvent) {
+        continue;
+      }
+
+      for (const service of this.integrationServices) {
+        this.processCancelledLeaveRequest(
+          leaveRequest,
+          leaveRequestCalendarEvent,
+          service
+        );
+      }
+      await this.leaveRequestCalendarEventRepository.deleteLeaveRequestCalendarEvent(
+        leaveRequestCalendarEvent.id
       );
-
-    for (const event of obsoleteEvents) {
-      await this.processCancelledLeaveRequest(event);
     }
   }
 }

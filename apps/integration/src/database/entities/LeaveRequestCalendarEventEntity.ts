@@ -8,7 +8,7 @@ export class LeaveRequestCalendarEvent {
   @Column()
   sageLeaveRequestId: number;
 
-  @Column()
+  @Column({ nullable: true })
   calendarEventId: string;
 
   @Column('timestamp with time zone')

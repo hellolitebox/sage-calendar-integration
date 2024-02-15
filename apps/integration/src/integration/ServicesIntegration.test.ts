@@ -6,6 +6,7 @@ import type { LeaveRequestCalendarEventRepository } from '../database/entities/L
 import SageLeaveEventScheduler from './ServicesIntegration';
 import { mockLeaveRequests } from '../sage/mock/mockLeaveRequest';
 import mockLeaveRequestCalendarEventRepository from '../database/mock/leaveRequestCalendarEventRepositoryMock';
+import type { LeaveRequest } from 'src/sage/SageServiceInterfaces';
 
 jest.mock('../sage/SageService');
 jest.mock('../calendar');
@@ -39,11 +40,41 @@ CalendarService.prototype.createEvent = jest.fn((leaveCalendarEventData) =>
   })
 );
 
+class IntegrationServiceMock {
+  handleCreateLeaveRequest = jest
+    .fn()
+    .mockImplementation((leaveRequest: LeaveRequest) => {
+      return Promise.resolve('integrationServiceId');
+    });
+
+  handleUpdateLeaveRequest = jest
+    .fn()
+    .mockImplementation(
+      (leaveRequest: LeaveRequest, integrationLeaveId: string) => {
+        return Promise.resolve('newIntegrationServiceId');
+      }
+    );
+
+  handleRemoveLeaveRequest = jest
+    .fn()
+    .mockImplementation(
+      (leaveRequest: LeaveRequest, integrationLeaveId: string) => {
+        return Promise.resolve();
+      }
+    );
+
+  formatNoUpdateNeededMessage = jest
+    .fn()
+    .mockImplementation((leaveRequest: LeaveRequest) => {
+      return `Integration Event already exist for ${leaveRequest.employee.lastName}`;
+    });
+}
+
 describe('syncSageWithCalendar Tests', () => {
-  let calendarServiceMock;
   let sageServiceMock;
   let sageLeaveEventScheduler: SageLeaveEventScheduler;
   let leaveRequestCalendarEventRepository: LeaveRequestCalendarEventRepository;
+  let integrationServiceMock: IntegrationServiceMock;
 
   beforeEach(() => {
     leaveRequestCalendarEventRepository =
@@ -51,9 +82,7 @@ describe('syncSageWithCalendar Tests', () => {
 
     process.env.ENABLE_TEST_USERS_ALL = 'false';
 
-    calendarServiceMock = new CalendarService({
-      calendarId: 'test-calendar-id',
-    });
+    integrationServiceMock = new IntegrationServiceMock();
 
     sageServiceMock = new SageService({
       sageDomain: 'https://example.com',
@@ -67,23 +96,23 @@ describe('syncSageWithCalendar Tests', () => {
 
   it('should handle the complete flow of syncing Sage with Calendar', async () => {
     sageLeaveEventScheduler = new SageLeaveEventScheduler({
-      calendarService: calendarServiceMock,
       sageService: sageServiceMock,
       leaveRequestCalendarEventRepository,
+      integrationServices: [integrationServiceMock],
     });
 
-    await sageLeaveEventScheduler.syncSageWithCalendar();
+    await sageLeaveEventScheduler.syncSageWithIntegrationServices();
 
     expect(SageService.prototype.fetchLeaveRequests).toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventBySageId
     ).toHaveBeenCalledWith(1);
-    expect(calendarServiceMock.createEvent).toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.insertLeaveRequestCalendarEvent
     ).toHaveBeenCalled();
+    expect(integrationServiceMock.handleCreateLeaveRequest).toHaveBeenCalled();
     expect(
-      leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventsBySageIds
+      leaveRequestCalendarEventRepository.updateLeaveRequestCalendarEvent
     ).toHaveBeenCalled();
   });
 
@@ -93,40 +122,46 @@ describe('syncSageWithCalendar Tests', () => {
       findLeaveRequestCalendarEventBySageId: jest.fn(
         (sageLeaveRequestId: number) => {
           if (sageLeaveRequestId === 1) {
-            return Promise.resolve([
-              {
-                id: 1,
-                sageLeaveRequestId: 1,
-                calendarEventId: 'test-event-id',
-                startDateTime: new Date('2023-01-10T09:00'),
-                endDateTime: new Date('2023-01-10T17:00'),
-              },
-            ]);
+            return Promise.resolve({
+              id: 1,
+              sageLeaveRequestId: 1,
+              calendarEventId: 'test-event-id',
+              startDateTime: new Date('2023-01-10T09:00'),
+              endDateTime: new Date('2023-01-10T17:00'),
+            });
           } else {
-            return Promise.resolve([]);
+            return Promise.resolve(null);
           }
         }
       ),
     };
     sageLeaveEventScheduler = new SageLeaveEventScheduler({
-      calendarService: calendarServiceMock,
       sageService: sageServiceMock,
       leaveRequestCalendarEventRepository,
+      integrationServices: [integrationServiceMock],
     });
 
-    await sageLeaveEventScheduler.syncSageWithCalendar();
+    await sageLeaveEventScheduler.syncSageWithIntegrationServices();
 
     expect(SageService.prototype.fetchLeaveRequests).toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventBySageId
     ).toHaveBeenCalled();
-    expect(calendarServiceMock.createEvent).not.toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.insertLeaveRequestCalendarEvent
     ).not.toHaveBeenCalled();
     expect(
-      leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventsBySageIds
-    ).toHaveBeenCalled();
+      integrationServiceMock.handleCreateLeaveRequest
+    ).not.toHaveBeenCalled();
+    expect(
+      integrationServiceMock.handleUpdateLeaveRequest
+    ).not.toHaveBeenCalled();
+    expect(
+      leaveRequestCalendarEventRepository.updateLeaveRequestCalendarEvent
+    ).not.toHaveBeenCalled();
+    expect(
+      integrationServiceMock.handleRemoveLeaveRequest
+    ).not.toHaveBeenCalled();
   });
 
   it('should update Calendar Events for Leave request that has been updated', async () => {
@@ -135,43 +170,38 @@ describe('syncSageWithCalendar Tests', () => {
       findLeaveRequestCalendarEventBySageId: jest.fn(
         (sageLeaveRequestId: number) => {
           if (sageLeaveRequestId === 1) {
-            return Promise.resolve([
-              {
-                id: 1,
-                sageLeaveRequestId: 1,
-                calendarEventId: 'test-event-id',
-                startDateTime: new Date('2023-01-10T13:00'),
-                endDateTime: new Date('2023-01-10T17:00'),
-              },
-            ]);
+            return Promise.resolve({
+              id: 1,
+              sageLeaveRequestId: 1,
+              calendarEventId: 'test-event-id',
+              startDateTime: new Date('2023-01-10T13:00'),
+              endDateTime: new Date('2023-01-10T17:00'),
+            });
           } else {
-            return Promise.resolve([]);
+            return Promise.resolve(null);
           }
         }
       ),
     };
     sageLeaveEventScheduler = new SageLeaveEventScheduler({
-      calendarService: calendarServiceMock,
       sageService: sageServiceMock,
       leaveRequestCalendarEventRepository,
+      integrationServices: [integrationServiceMock],
     });
 
-    await sageLeaveEventScheduler.syncSageWithCalendar();
+    await sageLeaveEventScheduler.syncSageWithIntegrationServices();
 
     expect(SageService.prototype.fetchLeaveRequests).toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventBySageId
     ).toHaveBeenCalled();
-    expect(calendarServiceMock.deleteEvent).toHaveBeenCalledWith(
-      'test-event-id'
-    );
-    expect(calendarServiceMock.createEvent).toHaveBeenCalled();
+    expect(
+      integrationServiceMock.handleCreateLeaveRequest
+    ).not.toHaveBeenCalled();
+    expect(integrationServiceMock.handleUpdateLeaveRequest).toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.insertLeaveRequestCalendarEvent
     ).not.toHaveBeenCalled();
-    expect(
-      leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventsBySageIds
-    ).toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.updateLeaveRequestCalendarEvent
     ).toHaveBeenCalled();
@@ -180,45 +210,43 @@ describe('syncSageWithCalendar Tests', () => {
   it('should remove Calendar Events for Leave request that has been cancelled', async () => {
     leaveRequestCalendarEventRepository = {
       ...leaveRequestCalendarEventRepository,
-      findLeaveRequestCalendarEventsBySageIds: jest.fn(
-        (sageLeaveRequestIds: number[]) => {
-          return Promise.resolve([
-            {
-              id: 2,
-              sageLeaveRequestId: 2,
-              calendarEventId: 'test-event-id',
-              startDateTime: new Date('2023-01-10T13:00'),
-              endDateTime: new Date('2023-01-10T17:00'),
-            },
-          ]);
+      findLeaveRequestCalendarEventBySageId: jest.fn(
+        (sageLeaveRequestIds: number) => {
+          return Promise.resolve({
+            id: 2,
+            sageLeaveRequestId: 2,
+            calendarEventId: 'test-event-id',
+            startDateTime: new Date('2023-01-10T13:00'),
+            endDateTime: new Date('2023-01-10T17:00'),
+          });
         }
       ),
     };
     sageLeaveEventScheduler = new SageLeaveEventScheduler({
-      calendarService: calendarServiceMock,
       sageService: sageServiceMock,
       leaveRequestCalendarEventRepository,
+      integrationServices: [integrationServiceMock],
     });
 
-    await sageLeaveEventScheduler.syncSageWithCalendar();
+    await sageLeaveEventScheduler.syncSageWithIntegrationServices();
 
     expect(SageService.prototype.fetchLeaveRequests).toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventBySageId
+    ).toHaveBeenCalled();
+    expect(
+      integrationServiceMock.handleCreateLeaveRequest
     ).not.toHaveBeenCalled();
-    expect(calendarServiceMock.createEvent).not.toHaveBeenCalled();
+    expect(
+      integrationServiceMock.handleUpdateLeaveRequest
+    ).not.toHaveBeenCalled();
+    expect(integrationServiceMock.handleRemoveLeaveRequest).toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.insertLeaveRequestCalendarEvent
     ).not.toHaveBeenCalled();
     expect(
       leaveRequestCalendarEventRepository.updateLeaveRequestCalendarEvent
     ).not.toHaveBeenCalled();
-    expect(
-      leaveRequestCalendarEventRepository.findLeaveRequestCalendarEventsBySageIds
-    ).toHaveBeenCalledWith([2]);
-    expect(calendarServiceMock.deleteEvent).toHaveBeenCalledWith(
-      'test-event-id'
-    );
     expect(
       leaveRequestCalendarEventRepository.deleteLeaveRequestCalendarEvent
     ).toHaveBeenCalledWith(2);

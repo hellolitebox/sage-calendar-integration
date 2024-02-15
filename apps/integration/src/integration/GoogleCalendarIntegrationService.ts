@@ -96,16 +96,20 @@ export class GoogleCalendarIntegrationService
     }
   }
 
-  async handleRemoveLeaveRequest(integrationLeaveId: string) {
+  async handleRemoveLeaveRequest(
+    leaveRequest: LeaveRequest,
+    integrationLeaveId: string
+  ) {
     try {
       await this.calendarService.deleteEvent(integrationLeaveId);
       console.log(
-        `❌ Event Calendar removed for cancelled leave request id: ${integrationLeaveId}`
+        `❌ Event Calendar removed for cancelled leave request: ${leaveRequest.employee.firstName} ${leaveRequest.employee.lastName} - ${leaveRequest.policy.name}`
       );
     } catch (error) {
       console.error('Error deleting calendar event:', error);
     }
   }
+
   formatNoUpdateNeededMessage(leaveRequest: LeaveRequest): string {
     return `📅 Event Calendar already exists for leave request: ${leaveRequest.employee.lastName} ${leaveRequest.employee.firstName}: ${leaveRequest.policy?.name}`;
   }

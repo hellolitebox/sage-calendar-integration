@@ -44,7 +44,7 @@ const mockLeaveRequestCalendarEventRepository: LeaveRequestCalendarEventReposito
       async (id: number): Promise<LeaveRequestCalendarEvent | null> => null
     ),
 
-    findLeaveRequestCalendarEventBySageId: jest.fn().mockResolvedValue([]),
+    findLeaveRequestCalendarEventBySageId: jest.fn().mockResolvedValue(null),
 
     findLeaveRequestCalendarEventsBySageIds: jest.fn().mockResolvedValue([]),
   };

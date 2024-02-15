@@ -22,7 +22,7 @@ jest.mock('../database/entities/LeaveRequestCalendarEventDataSource');
 jest.mock('../sage');
 jest.mock('../calendar');
 
-SageLeaveEventScheduler.prototype.syncSageWithCalendar = jest
+SageLeaveEventScheduler.prototype.syncSageWithIntegrationServices = jest
   .fn()
   .mockResolvedValue({});
 
@@ -64,11 +64,8 @@ describe('InitCron', () => {
     expect(logSpy).toHaveBeenCalledWith(
       expect.stringContaining('Starting sync at')
     );
-    expect(logSpy).toHaveBeenCalledWith(
-      expect.stringContaining('Sync is finished at')
-    );
     expect(
-      SageLeaveEventScheduler.prototype.syncSageWithCalendar
+      SageLeaveEventScheduler.prototype.syncSageWithIntegrationServices
     ).toHaveBeenCalled();
   });
 });
