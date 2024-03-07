@@ -1,10 +1,10 @@
-# Litebox Sage - Google Calendar integration 
+# The Litebox Way - Sage Meets Google Calendar: Seamless Integration 🔗
 
 The purpose of this repository is to facilitate the integration of Sage HR with Google Calendar. While Sage offers a basic integration with Google Calendar, it primarily focuses on creating calendar entries. This integration aims to provide detailed and accurate information about approved employee leave requests directly within Google Calendar, enhancing visibility regarding the status of event attendees.
 
 Given that Sage HR does not offer a webhook for leave requests, we have implemented a CRON job to periodically fetch all approved leave requests. This process ensures the creation, updating, and deletion of these events in Google Calendar, maintaining synchronization and accuracy.
 
-## Main Features
+## Unveiling Capabilities: Main Features ✨
 
 - **Node.js Foundation**: Built on a Node.js platform, ensuring efficient and scalable backend performance.
 - **Scheduled Tasks with node-cron**: Utilizes node-cron for scheduling regular tasks, enabling automated synchronization processes.
@@ -12,18 +12,18 @@ Given that Sage HR does not offer a webhook for leave requests, we have implemen
 - **TypeORM for Object-Relational Mapping**: Incorporates TypeORM, a powerful ORM tool, to manage database entities and transactions, enhancing code maintainability and database interaction.
 - **Google Calendar Integration**: Seamlessly integrates with Google Calendar, providing accurate and detailed information about approved employee leave requests directly within the calendar interface.
 
-# Pre-settings
+# Setting the Stage: Prepping for Litebox Sage ⚙
 
 Before starting with the integration, ensure you have the following prerequisites and configurations in place:
 
-## Prerequisites
+## The Must-Haves: Litebox Sage Essentials 📝
 
 - **Sage HR API Key**: Obtain an API key from Sage HR to interact with their system.
 - **Google Service Account**: Create a service account in Google Cloud to manage calendar events through the CRON job.
 - **Wide-Domain Authority for Service Account**: Grant the service account wide-domain authority to allow event creation with attendees and set their status as accepted. This is crucial for managing calendar events accurately. [Google's Wide-Domain Authority Documentation](https://developers.google.com/identity/protocols/oauth2/service-account#delegatingauthority)
 - **JSON Web Token**: Download a JSON Web Token for the service account's credentials. This token is necessary for authenticating your application with Google's services. [Google's JWT Guide](https://cloud.google.com/nodejs/docs/reference/google-auth-library/latest#json-web-tokens)
 
-## Setting Up the Google Cloud Service Account
+## Cloud Crafting: Google Cloud Setup ☁
 
 To connect with Google's API and manage calendar events, follow these steps:
 
@@ -38,7 +38,7 @@ To connect with Google's API and manage calendar events, follow these steps:
    This permission allows the application to set attendees in events and set `responseStatus` as **"accepted"**, which is a key feature of the integration.
 
 
-# Environment Variables
+# Setting Environment Variables 🌍
 
 To run this project successfully, you need to set up the following environment variables in your `.env` file. You can find an example in `.env.example`.
 
@@ -56,7 +56,7 @@ To run this project successfully, you need to set up the following environment v
 - `ENABLE_TEST_USERS_ALL`: (Optional) Flag to enable testing for all users.
 - `SYNC_SAGE_CALENDAR_CRON_SCHEDULE`: CRON schedule for syncing Sage Calendar.
 
-## Setting Up `GOOGLE_CALENDAR_CREDENTIALS`
+## Unlocking Google Calendar: Credentials Setup  🔓
 
 For `GOOGLE_CALENDAR_CREDENTIALS`, it's important to copy and paste the entire JWT JSON downloaded from your Google Cloud Service Account credentials page. It should look something like this:
 
@@ -78,7 +78,7 @@ GOOGLE_CALENDAR_CREDENTIALS='{
 Make sure to replace the placeholders with your actual Service Account information.
 
 
-# Migrations
+# Data Journey: Managing Migrations 🌐
 
 This project uses [TypeORM migrations](https://typeorm.io/migrations) for database migrations. Migrations are stored in the following directory structure:
 
@@ -91,7 +91,7 @@ This project uses [TypeORM migrations](https://typeorm.io/migrations) for databa
                 - 1701452789418-ExampleMigration.ts
 ```
 
-## Creating and Generating Migrations
+## Crafting New Realities: Generating Migrations 🎨
 
 To manage your database schema changes, you can create and generate migrations as follows:
 
@@ -122,7 +122,7 @@ npm run migration:run
 This command will execute the migrations in the order they were created, updating your database schema according to the defined changes.
 
 
-# Running the CRON Job
+# Time’s Tick: Running CRON Jobs ⏳
 
 To start the synchronization process between Sage HR and Google Calendar, run the following command:
 
@@ -131,7 +131,7 @@ npm run dev
 ```
 Once the cron job initiates the synchronization, you will see logs indicating the progress and actions taken:
 
-## Logs and Notifications
+## Alerts & Notifications 🔔
 - **Starting Sync:** At the beginning of the synchronization process, you will see:
 
 ```bash
@@ -169,7 +169,7 @@ Once the cron job initiates the synchronization, you will see logs indicating th
 
 These logs will help you track the progress of the synchronization and quickly identify the status of each leave request being processed.
 
-# Adding More Integrations
+# Adding More Magic to Litebox Sage 🧪
 
 This project is designed to be extensible and allows for the integration of additional services. To add a new service, the service must implement the `SageIntegrationService` interface. This interface includes the following methods:
 
@@ -202,3 +202,12 @@ In this example, `MyNewService` is a class that implements the `SageIntegrationS
 Remember, each service you add must implement all methods defined in the `SageIntegrationService` interface. This ensures that the `SageLeaveEventScheduler` can correctly interact with the service when processing leave requests.
 
 This design allows for easy addition of new services and makes the project highly extensible. You can add as many services as you need, and each one can handle leave requests in a way that makes sense for the specific service.
+
+# Litebox Careers 💻
+
+If you're passionate about developing amazing applications and websites, Litebox is the place for you. 
+
+Would you like to join our digital force? Feel free to apply at https://litebox.ai/careers
+
+--- 
+by [Litebox](https://litebox.ai/).
