@@ -210,4 +210,4 @@ If you're passionate about developing amazing applications and websites, Litebox
 Would you like to join our digital force? Feel free to apply at https://litebox.ai/careers
 
 --- 
-by [Litebox](https://litebox.ai/).
+By [Litebox](https://litebox.ai/) 🚀
