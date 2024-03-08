@@ -207,7 +207,7 @@ This design allows for easy addition of new services and makes the project highl
 
 If you're passionate about developing amazing applications and websites, Litebox is the place for you. 
 
-Would you like to join our digital force? Feel free to apply at https://litebox.ai/careers
+Would you like to join our digital force? Feel free to apply at https://litebox.hiringroom.com/jobs
 
 --- 
 By [Litebox](https://litebox.ai/) 🚀
