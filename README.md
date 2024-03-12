@@ -4,6 +4,8 @@ The purpose of this repository is to facilitate the integration of Sage HR with 
 
 Given that Sage HR does not offer a webhook for leave requests, we have implemented a CRON job to periodically fetch all approved leave requests. This process ensures the creation, updating, and deletion of these events in Google Calendar, maintaining synchronization and accuracy.
 
+![banner](apps/integration/assets/sage-meets-google-calendar.png)
+
 ## Unveiling Capabilities: Main Features ✨
 
 - **Node.js Foundation**: Built on a Node.js platform, ensuring efficient and scalable backend performance.
