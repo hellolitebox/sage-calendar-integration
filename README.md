@@ -1,6 +1,6 @@
-# The Litebox Way - Sage Meets Google Calendar: Seamless Integration 🔗
+# The Litebox Way - Sage HR Meets Google Calendar: Seamless Integration 🔗
 
-The purpose of this repository is to facilitate the integration of Sage HR with Google Calendar. While Sage offers a basic integration with Google Calendar, it primarily focuses on creating calendar entries. This integration aims to provide detailed and accurate information about approved employee leave requests directly within Google Calendar, enhancing visibility regarding the status of event attendees.
+The purpose of this repository is to facilitate the integration of Sage HR with Google Calendar. While Sage HR offers a basic integration with Google Calendar, it primarily focuses on creating calendar entries. This integration aims to provide detailed and accurate information about approved employee leave requests directly within Google Calendar, enhancing visibility regarding the status of event attendees.
 
 Given that Sage HR does not offer a webhook for leave requests, we have implemented a CRON job to periodically fetch all approved leave requests. This process ensures the creation, updating, and deletion of these events in Google Calendar, maintaining synchronization and accuracy.
 
@@ -18,7 +18,7 @@ Given that Sage HR does not offer a webhook for leave requests, we have implemen
 
 Before starting with the integration, ensure you have the following prerequisites and configurations in place:
 
-## The Must-Haves: Litebox Sage Essentials 📝
+## The Must-Haves: Litebox Sage HR Essentials 📝
 
 - **Sage HR API Key**: Obtain an API key from Sage HR to interact with their system.
 - **Google Service Account**: Create a service account in Google Cloud to manage calendar events through the CRON job.
@@ -56,7 +56,7 @@ To run this project successfully, you need to set up the following environment v
 - `POSTGRES_DATA_BASE`: Name of your PostgreSQL database.
 - `TEST_USERS`: (Optional) User IDs for testing purposes.
 - `ENABLE_TEST_USERS_ALL`: (Optional) Flag to enable testing for all users.
-- `SYNC_SAGE_CALENDAR_CRON_SCHEDULE`: CRON schedule for syncing Sage Calendar.
+- `SYNC_SAGE_CALENDAR_CRON_SCHEDULE`: CRON schedule for syncing Sage HR Calendar.
 
 ## Unlocking Google Calendar: Credentials Setup  🔓
 
