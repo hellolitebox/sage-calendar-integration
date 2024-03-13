@@ -14,7 +14,7 @@ Given that Sage HR does not offer a webhook for leave requests, we have implemen
 - **TypeORM for Object-Relational Mapping**: Incorporates TypeORM, a powerful ORM tool, to manage database entities and transactions, enhancing code maintainability and database interaction.
 - **Google Calendar Integration**: Seamlessly integrates with Google Calendar, providing accurate and detailed information about approved employee leave requests directly within the calendar interface.
 
-# Setting the Stage: Prepping for Litebox Sage ⚙
+# Setting the Stage: Prepping for Litebox Sage HR ⚙
 
 Before starting with the integration, ensure you have the following prerequisites and configurations in place:
 
@@ -171,7 +171,7 @@ Once the cron job initiates the synchronization, you will see logs indicating th
 
 These logs will help you track the progress of the synchronization and quickly identify the status of each leave request being processed.
 
-# Adding More Magic to Litebox Sage 🧪
+# Adding More Magic to Litebox Sage HR 🧪
 
 This project is designed to be extensible and allows for the integration of additional services. To add a new service, the service must implement the `SageIntegrationService` interface. This interface includes the following methods:
 
